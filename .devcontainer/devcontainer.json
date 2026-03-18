@@ -1,0 +1,19 @@
+{
+  "name": "Cloudflare Worker Dev",
+  "dockerFile": "Dockerfile",
+  "workspaceFolder": "/app",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "cloudflare.workers-extension"
+      ]
+    }
+  },
+  "forwardPorts": [
+    8787
+  ],
+  "remoteUser": "node",
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached"
+  ]
+}
