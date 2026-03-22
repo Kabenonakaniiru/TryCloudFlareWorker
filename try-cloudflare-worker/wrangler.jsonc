@@ -4,7 +4,7 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "try-cloudflare-worker",
+	"name": "try-cloudflare-worker-deploy",
 	"main": "src/index.ts",
 	"compatibility_date": "2026-03-10",
 	"compatibility_flags": [
