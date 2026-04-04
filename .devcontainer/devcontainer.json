@@ -1,7 +1,8 @@
 {
   "name": "Cloudflare Worker Dev",
   "dockerFile": "Dockerfile",
-  "workspaceFolder": "/app",
+  "workspaceFolder": "/app/try-cloudflare-worker",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/app,type=bind",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -9,11 +10,12 @@
       ]
     }
   },
+  "postCreateCommand": "sudo chown -R node:node ${containerWorkspaceFolder} && npm install",
   "forwardPorts": [
     8787
   ],
   "remoteUser": "node",
   "mounts": [
-    "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached"
+    "source=try-cloudflare-worker-node_modules,target=/app/try-cloudflare-worker/node_modules,type=volume"
   ]
 }
