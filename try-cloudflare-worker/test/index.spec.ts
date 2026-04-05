@@ -28,6 +28,26 @@ describe("Hello World user worker", () => {
 		});
 	});
 
+	describe("request for /message2", () => {
+		it('/ responds with "この沼、深い" (unit style)', async () => {
+			const request = new Request<unknown, IncomingRequestCfProperties>(
+				"http://example.com/message2"
+			);
+			// Create an empty context to pass to `worker.fetch()`.
+			const ctx = createExecutionContext();
+			const response = await worker.fetch(request, env, ctx);
+			// Wait for all `Promise`s passed to `ctx.waitUntil()` to settle before running test assertions
+			await waitOnExecutionContext(ctx);
+			expect(await response.text()).toMatchInlineSnapshot(`"この沼、深い"`);
+		});
+
+		it('responds with "この沼、深い" (integration style)', async () => {
+			const request = new Request("http://example.com/message2");
+			const response = await SELF.fetch(request);
+			expect(await response.text()).toMatchInlineSnapshot(`"この沼、深い"`);
+		});
+	});
+
 	describe("request for /random", () => {
 		it("/ responds with a random UUID (unit style)", async () => {
 			const request = new Request<unknown, IncomingRequestCfProperties>(
