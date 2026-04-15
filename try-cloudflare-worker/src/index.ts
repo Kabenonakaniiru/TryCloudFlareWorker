@@ -19,10 +19,6 @@ export default {
 				return new Response('Hello, World!');
 			case '/message2':
 				return new Response('この沼、深い');
-			case '/db':
-				// D1 にアクセスする例
-				const result = await env.my_db1.prepare("SELECT 1 as id").first();
-				return new Response(JSON.stringify(result));
 			case '/random':
 				return new Response(crypto.randomUUID());
 			default:
