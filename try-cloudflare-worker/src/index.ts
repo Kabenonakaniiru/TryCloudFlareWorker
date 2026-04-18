@@ -11,6 +11,9 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+import { getDb } from './db';
+import { users } from './schema';
+
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		const url = new URL(request.url);
@@ -19,6 +22,13 @@ export default {
 				return new Response('Hello, World!');
 			case '/message2':
 				return new Response('この沼、深い');
+			case '/db':
+				// Drizzle ORM で users テーブルのすべての行を取得
+				const db = getDb(env);
+				const allUsers = await db.select().from(users);
+				return new Response(JSON.stringify(allUsers, null, 2), {
+					headers: { 'Content-Type': 'application/json' }
+				});
 			case '/random':
 				return new Response(crypto.randomUUID());
 			default:
