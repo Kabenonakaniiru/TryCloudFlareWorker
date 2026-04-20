@@ -24,7 +24,8 @@
 			"binding": "my_db1",
 			"database_name": "my-db1",
 			"database_id": "307569e8-ae0c-4d6b-bb98-8f113b2870ce",
-			"remote": false
+			"remote": false,
+			"migrations_dir": "drizzle"
 		}
 	]
 	/**
