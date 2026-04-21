@@ -17,22 +17,48 @@ import { users } from './schema';
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
 		const url = new URL(request.url);
-		switch (url.pathname) {
-			case '/message':
-				return new Response('Hello, World!');
-			case '/message2':
-				return new Response('この沼、深い');
-			case '/db':
-				// Drizzle ORM で users テーブルのすべての行を取得
+		// 1. GETリクエストの処理（既存）
+		if (request.method === 'GET') {
+			switch (url.pathname) {
+				case '/message':
+					return new Response('Hello, World!');
+				case '/message2':
+					return new Response('この沼、深い');
+				case '/db':
+					// Drizzle ORM で users テーブルのすべての行を取得
+					const db = getDb(env);
+					const allUsers = await db.select().from(users);
+					return new Response(JSON.stringify(allUsers, null, 2), {
+						headers: { 'Content-Type': 'application/json' }
+					});
+				case '/random':
+					return new Response(crypto.randomUUID());
+				default:
+					return new Response('Not Found', { status: 404 });
+			}
+		}
+
+		// 2. POSTリクエストの処理（新規追加）
+		if (request.method === 'POST' && url.pathname === '/add-user') {
+			try {
+				const body = await request.json() as { name: string };
 				const db = getDb(env);
-				const allUsers = await db.select().from(users);
-				return new Response(JSON.stringify(allUsers, null, 2), {
+
+				// データベースに挿入
+				// .returning() をつけると挿入されたデータ（IDなど）を返してくれます
+				const insertedUser = await db.insert(users).values({
+					name: body.name
+				}).returning();
+
+				return new Response(JSON.stringify(insertedUser), {
+					status: 201,
 					headers: { 'Content-Type': 'application/json' }
 				});
-			case '/random':
-				return new Response(crypto.randomUUID());
-			default:
-				return new Response('Not Found', { status: 404 });
+			} catch (err) {
+				return new Response('Invalid JSON or Database Error', { status: 400 });
+			}
 		}
+
+		return new Response('Not Found', { status: 404 });
 	},
 } satisfies ExportedHandler<Env>;

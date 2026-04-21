@@ -14,6 +14,13 @@
 	<output id="random" for="random-button"></output>
 	<button id="db-button" type="button">Fetch from Database</button>
 	<output id="db" for="db-button"></output>
+
+	<hr>
+	<h3>Add New User</h3>
+	<input type="text" id="user-name" placeholder="Enter name">
+	<button id="add-user-button" type="button">Register User</button>
+	<p id="register-status"></p>
+
 	<script>
 		fetch('/message')
 			.then((resp) => resp.text())
@@ -39,6 +46,35 @@
 					const db = document.getElementById('db');
 					db.textContent = text;
 				});
+		});
+
+		// 登録ボタンのイベント
+		const addUserButton = document.getElementById("add-user-button");
+		addUserButton.addEventListener("click", async () => {
+			const nameInput = document.getElementById('user-name');
+			const status = document.getElementById('register-status');
+
+			if (!nameInput.value) return alert("Name is required");
+
+			status.textContent = "Registering...";
+
+			try {
+				const resp = await fetch('/add-user', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ name: nameInput.value })
+				});
+
+				if (resp.ok) {
+					const newUser = await resp.json();
+					status.textContent = `Success! Registered: ${newUser[0].name} (ID: ${newUser[0].id})`;
+					nameInput.value = ''; // 入力欄をクリア
+				} else {
+					status.textContent = "Failed to register.";
+				}
+			} catch (err) {
+				status.textContent = "Error: " + err.message;
+			}
 		});
 	</script>
 </body>
