@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>タスク管理 - ソシャゲツール</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+  <h1>📋 ソシャゲタスク管理</h1>
+  <nav>
+    <a href="/" class="btn-link">← メインへ戻る</a>
+  </nav>
+
+  <section class="task-form">
+    <div class="form-group">
+      <label>タスク名</label>
+      <input type="text" id="task-title" placeholder="例: デイリークエスト">
+    </div>
+    <div class="form-group">
+      <label>開始</label>
+      <input type="datetime-local" id="task-start">
+    </div>
+    <div class="form-group">
+      <label>終了</label>
+      <input type="datetime-local" id="task-end">
+    </div>
+    <div class="form-group">
+      <label>繰り返し</label>
+      <select id="task-interval">
+        <option value="none">なし</option>
+        <option value="daily">毎日</option>
+        <option value="weekly">毎週</option>
+        <option value="monthly">毎月</option>
+      </select>
+    </div>
+    <button id="add-task-button">追加する</button>
+  </section>
+
+  <table>
+    <thead>
+      <tr>
+        <th>タイトル</th>
+        <th>期間</th>
+        <th>繰り返し</th>
+        <th>状態</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="task-list"></tbody>
+  </table>
+
+  <script>
+    // JSの内容は前回と同様（エンドポイントは /api/tasks など）
+    async function loadTasks() {
+      const resp = await fetch('/api/tasks');
+      const tasks = await resp.json();
+      const tbody = document.getElementById('task-list');
+      tbody.innerHTML = '';
+      tasks.forEach(task => {
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr>
+            <td><strong>${task.title}</strong></td>
+            <td>${task.start_at?.replace('T', ' ') || '-'} <br> ${task.end_at?.replace('T', ' ') || '-'}</td>
+            <td>${task.interval}</td>
+            <td><span class="status-badge">${task.status}</span></td>
+            <td><button class="delete-btn" onclick="deleteTask(${task.id})">削除</button></td>
+          </tr>
+        `);
+      });
+    }
+    // ...以下、追加・削除のロジック
+    loadTasks();
+  </script>
+</body>
+
+</html>
