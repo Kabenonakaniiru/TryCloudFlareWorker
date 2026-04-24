@@ -1,32 +1,82 @@
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Hello, World!</title>
-	</head>
-	<body>
-		<h1 id="heading"></h1>
-		<p>This page comes from a static asset stored at `public/index.html` as configured in `wrangler.jsonc`.</p>
-		<button id="button" type="button">Fetch a random UUID</button>
-		<output id="random" for="button"></output>
-		<script>
-			fetch('/message')
+
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Hello, World!</title>
+</head>
+
+<body>
+	<h1 id="heading"></h1>
+	<p>This page comes from a static asset stored at `public/index.html` as configured in `wrangler.jsonc`.</p>
+	<button id="random-button" type="button">Fetch a random UUID</button>
+	<output id="random" for="random-button"></output>
+	<button id="db-button" type="button">Fetch from Database</button>
+	<output id="db" for="db-button"></output>
+
+	<hr>
+	<h3>Add New User</h3>
+	<input type="text" id="user-name" placeholder="Enter name">
+	<button id="add-user-button" type="button">Register User</button>
+	<p id="register-status"></p>
+
+	<script>
+		fetch('/message')
+			.then((resp) => resp.text())
+			.then((text) => {
+				const h1 = document.getElementById('heading');
+				h1.textContent = text;
+			});
+
+		const randomButton = document.getElementById("random-button");
+		randomButton.addEventListener("click", () => {
+			fetch('/random')
 				.then((resp) => resp.text())
 				.then((text) => {
-					const h1 = document.getElementById('heading');
-					h1.textContent = text;
+					const random = document.getElementById('random');
+					random.textContent = text;
+				});
+		});
+		const dbButton = document.getElementById("db-button");
+		dbButton.addEventListener("click", () => {
+			fetch('/db')
+				.then((resp) => resp.text())
+				.then((text) => {
+					const db = document.getElementById('db');
+					db.textContent = text;
+				});
+		});
+
+		// 登録ボタンのイベント
+		const addUserButton = document.getElementById("add-user-button");
+		addUserButton.addEventListener("click", async () => {
+			const nameInput = document.getElementById('user-name');
+			const status = document.getElementById('register-status');
+
+			if (!nameInput.value) return alert("Name is required");
+
+			status.textContent = "Registering...";
+
+			try {
+				const resp = await fetch('/add-user', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ name: nameInput.value })
 				});
 
-			const button = document.getElementById("button");
-			button.addEventListener("click", () => {
-				fetch('/random')
-					.then((resp) => resp.text())
-					.then((text) => {
-						const random = document.getElementById('random');
-						random.textContent = text;
-					});
-			});
-		</script>
-	</body>
+				if (resp.ok) {
+					const newUser = await resp.json();
+					status.textContent = `Success! Registered: ${newUser[0].name} (ID: ${newUser[0].id})`;
+					nameInput.value = ''; // 入力欄をクリア
+				} else {
+					status.textContent = "Failed to register.";
+				}
+			} catch (err) {
+				status.textContent = "Error: " + err.message;
+			}
+		});
+	</script>
+</body>
+
 </html>
