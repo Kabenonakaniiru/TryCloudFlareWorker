@@ -16,19 +16,19 @@
 
   <section class="task-form">
     <div class="form-group">
-      <label>タスク名</label>
+      <label for="task-title">タスク名</label>
       <input type="text" id="task-title" placeholder="例: デイリークエスト">
     </div>
     <div class="form-group">
-      <label>開始</label>
+      <label for="task-start">開始</label>
       <input type="datetime-local" id="task-start">
     </div>
     <div class="form-group">
-      <label>終了</label>
+      <label for="task-end">終了</label>
       <input type="datetime-local" id="task-end">
     </div>
     <div class="form-group">
-      <label>繰り返し</label>
+      <label for="task-interval">繰り返し</label>
       <select id="task-interval">
         <option value="none">なし</option>
         <option value="daily">毎日</option>
@@ -36,7 +36,7 @@
         <option value="monthly">毎月</option>
       </select>
     </div>
-    <button id="add-task-button">追加する</button>
+    <button type="button" id="add-task-button">追加する</button>
   </section>
 
   <table>
@@ -53,26 +53,97 @@
   </table>
 
   <script>
-    // JSの内容は前回と同様（エンドポイントは /api/tasks など）
-    async function loadTasks() {
-      const resp = await fetch('/api/tasks');
-      const tasks = await resp.json();
-      const tbody = document.getElementById('task-list');
-      tbody.innerHTML = '';
-      tasks.forEach(task => {
-        tbody.insertAdjacentHTML('beforeend', `
-          <tr>
-            <td><strong>${task.title}</strong></td>
-            <td>${task.start_at?.replace('T', ' ') || '-'} <br> ${task.end_at?.replace('T', ' ') || '-'}</td>
-            <td>${task.interval}</td>
-            <td><span class="status-badge">${task.status}</span></td>
-            <td><button class="delete-btn" onclick="deleteTask(${task.id})">削除</button></td>
-          </tr>
-        `);
+    // ページ読み込み完了後に実行
+    document.addEventListener('DOMContentLoaded', () => {
+      const taskBtn = document.getElementById('add-task-button');
+      const taskList = document.getElementById('task-list');
+
+      // 1. タスク一覧の読み込み関数
+      async function loadTasks() {
+        try {
+          const resp = await fetch('/api/tasks');
+          if (!resp.ok) throw new Error('一覧の取得に失敗しました');
+          const tasks = await resp.json();
+
+          taskList.innerHTML = '';
+          tasks.forEach(task => {
+            const row = `
+              <tr>
+                <td><strong>${task.title}</strong></td>
+                <td>${(task.start_at || '-').replace('T', ' ')} <br> ${(task.end_at || '-').replace('T', ' ')}</td>
+                <td>${task.interval}</td>
+                <td><span class="status-badge">${task.status}</span></td>
+                <td><button class="delete-btn" onclick="deleteTask(${task.id})">削除</button></td>
+              </tr>
+            `;
+            taskList.insertAdjacentHTML('beforeend', row);
+          });
+        } catch (err) {
+          console.error('Load Error:', err);
+        }
+      }
+
+      // 2. 追加ボタンのイベント
+      taskBtn.addEventListener('click', async () => {
+        console.log('Button clicked!'); // デバッグ用ログ
+
+        const payload = {
+          title: document.getElementById('task-title').value,
+          start_at: document.getElementById('task-start').value,
+          end_at: document.getElementById('task-end').value,
+          interval: document.getElementById('task-interval').value
+        };
+
+        if (!payload.title) {
+          alert('タスク名を入力してください');
+          return;
+        }
+
+        try {
+          const resp = await fetch('/api/add-task', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (resp.ok) {
+            document.getElementById('task-title').value = ''; // 入力欄クリア
+            await loadTasks(); // リロードせずに再描画
+          } else {
+            const errorText = await resp.text();
+            alert('保存に失敗しました: ' + errorText);
+          }
+        } catch (err) {
+          console.error('Fetch Error:', err);
+          alert('通信エラーが発生しました');
+        }
       });
+
+      // 初回読み込み
+      loadTasks();
+    });
+
+    // 削除用関数（グローバルに配置）
+    async function deleteTask(id) {
+      if (!confirm('このタスクを削除してもよろしいですか？')) return;
+
+      try {
+        const resp = await fetch('/api/delete-task', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: id })
+        });
+
+        if (resp.ok) {
+          // 削除に成功したら一覧を再読み込み（loadTasksはDOMContentLoaded内にあるので、必要に応じて外に出すか、location.reload()を使用）
+          location.reload();
+        } else {
+          alert('削除に失敗しました');
+        }
+      } catch (err) {
+        console.error('Delete Error:', err);
+      }
     }
-    // ...以下、追加・削除のロジック
-    loadTasks();
   </script>
 </body>
 

@@ -8,6 +8,13 @@
       "when": 1776276045160,
       "tag": "0000_polite_yellow_claw",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1777410434340,
+      "tag": "0001_gorgeous_emma_frost",
+      "breakpoints": true
     }
   ]
 }
