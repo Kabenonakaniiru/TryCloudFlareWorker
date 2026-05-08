@@ -1,4 +1,5 @@
 import { taskHandler } from './handlers/tasks';
+import { calendarHandler } from './handlers/calendar';
 
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
@@ -11,6 +12,14 @@ export default {
 				case '/api/tasks':
 					const data = await taskHandler.list(env);
 					return Response.json(data);
+
+				case '/api/calendar-test':
+					try {
+						const events = await calendarHandler.listTodayEvents(env);
+						return Response.json(events);
+					} catch (err: any) {
+						return new Response(err.message, { status: 500 });
+					}
 
 				// ページ返却ロジック
 				default:
