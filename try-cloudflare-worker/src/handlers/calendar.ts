@@ -35,7 +35,12 @@ export const calendarHandler = {
 
   // 今日の予定一覧を取得
   async listTodayEvents(env: Env) {
-    const token = await this.getAccessToken(env.GOOGLE_CLIENT_EMAIL, env.GOOGLE_PRIVATE_KEY);
+
+    const privateKey = env.GOOGLE_PRIVATE_KEY
+      .replace(/\\n/g, '\n') // 文字列としての "\n" を実際の改行に変換
+      .replace(/"/g, '');    // もし前後を引用符で囲んでしまっていたら削除
+
+    const token = await this.getAccessToken(env.GOOGLE_CLIENT_EMAIL, privateKey);
 
     const now = new Date();
     const min = new Date(now.setHours(0, 0, 0, 0)).toISOString();
