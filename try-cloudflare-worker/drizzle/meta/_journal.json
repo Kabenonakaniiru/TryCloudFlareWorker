@@ -15,6 +15,13 @@
       "when": 1777410434340,
       "tag": "0001_gorgeous_emma_frost",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1778607496298,
+      "tag": "0002_normal_the_stranger",
+      "breakpoints": true
     }
   ]
 }
