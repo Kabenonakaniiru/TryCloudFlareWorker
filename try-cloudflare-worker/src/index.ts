@@ -1,47 +1,65 @@
-import { taskHandler } from './handlers/tasks';
-import { calendarHandler } from './handlers/calendar';
+import { routes, findRoute, pageRoutes } from './routes';
+import { apiResponse, apiError } from './utils/apiHandler';
+
+async function serveAsset(env: Env, request: Request, path: string) {
+	const url = new URL(request.url);
+	return env.ASSETS
+		? await env.ASSETS.fetch(new Request(new URL(path, url.origin), request))
+		: apiError('Not Found', 404);
+}
 
 export default {
-	async fetch(request, env, ctx): Promise<Response> {
+	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
 		const method = request.method;
 
-		// --- GET Requests ---
-		if (method === 'GET') {
-			switch (url.pathname) {
-				case '/api/tasks':
-					const data = await taskHandler.list(env);
-					return Response.json(data);
-
-				case '/api/calendar-test':
+		// API ルート処理
+		const matched = findRoute(url.pathname, method);
+		if (matched) {
+			try {
+				let body: any = undefined;
+				if (matched.route.parseBody) {
 					try {
-						const events = await calendarHandler.listTodayEvents(env);
-						return Response.json(events);
-					} catch (err: any) {
-						return new Response(err.message, { status: 500 });
+						body = await request.json();
+					} catch {
+						return apiError('Invalid JSON', 400);
 					}
+				}
 
-				// ページ返却ロジック
-				default:
-					return env.ASSETS ? await env.ASSETS.fetch(request) : new Response('Not Found', { status: 404 });
+				const result = await matched.route.handler({
+					env,
+					body,
+					params: matched.params,
+				});
+
+				// DELETE は 204 No Content、POST は 201 Created、GET は 200 OK
+				let status = 200;
+				if (method === 'POST') status = 201;
+				if (method === 'DELETE') status = 204;
+
+				// 204 No Content の場合はボディなし
+				if (status === 204) {
+					return new Response(null, { status });
+				}
+
+				return apiResponse(result, status);
+			} catch (error: any) {
+				console.error(`Route error [${method} ${url.pathname}]:`, error);
+				return apiError(error.message, 500);
 			}
 		}
 
-		// --- POST Requests ---
-		if (method === 'POST') {
-			const body = await request.json().catch(() => ({}));
-
-			switch (url.pathname) {
-				case '/api/add-task':
-					const newTask = await taskHandler.add(env, body);
-					return Response.json(newTask, { status: 201 });
-
-				case '/api/delete-task':
-					await taskHandler.delete(env, body.id);
-					return new Response('OK');
+		// ページルート処理
+		if (method === 'GET') {
+			const pageFile = pageRoutes[url.pathname];
+			if (pageFile) {
+				return await serveAsset(env, request, pageFile);
 			}
+
+			// デフォルト: /public 配下のアセット
+			return await serveAsset(env, request, url.pathname);
 		}
 
-		return new Response('Not Found', { status: 404 });
+		return apiError('Not Found', 404);
 	},
 } satisfies ExportedHandler<Env>;
