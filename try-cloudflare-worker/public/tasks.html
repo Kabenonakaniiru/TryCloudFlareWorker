@@ -100,7 +100,7 @@
         }
 
         try {
-          const resp = await fetch('/api/add-task', {
+          const resp = await fetch('/api/tasks', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -128,14 +128,12 @@
       if (!confirm('このタスクを削除してもよろしいですか？')) return;
 
       try {
-        const resp = await fetch('/api/delete-task', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: id })
+        const resp = await fetch(`/api/tasks/${id}`, {
+          method: 'DELETE'
         });
 
         if (resp.ok) {
-          // 削除に成功したら一覧を再読み込み（loadTasksはDOMContentLoaded内にあるので、必要に応じて外に出すか、location.reload()を使用）
+          // 削除に成功したら一覧を再読み込み
           location.reload();
         } else {
           alert('削除に失敗しました');

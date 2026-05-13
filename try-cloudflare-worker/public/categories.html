@@ -59,8 +59,9 @@
       const name = document.getElementById('cat-name').value;
       const color = document.getElementById('cat-color').value;
 
-      await fetch('/api/add-category', {
+      await fetch('/api/categories', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug, name, color })
       });
       loadCategories(); // 再読み込み
@@ -68,9 +69,8 @@
 
     window.deleteCategory = async (id) => {
       if (!confirm('削除しますか？')) return;
-      await fetch('/api/delete-category', {
-        method: 'POST',
-        body: JSON.stringify({ id })
+      await fetch(`/api/categories/${id}`, {
+        method: 'DELETE'
       });
       loadCategories();
     };
