@@ -17,6 +17,7 @@ describe("Worker API", () => {
 			await waitOnExecutionContext(ctx);
 
 			// DB error expected in test environment (no tables)
+			// The API now includes category information via JOIN query
 			// Just verify the route was found and error was handled
 			expect(response.status).toBe(500);
 			expect(response.headers.get("content-type")).toContain("application/json");
@@ -53,6 +54,25 @@ describe("Worker API", () => {
 			expect(response.status).toBe(400);
 			const body = await response.json() as any;
 			expect(body.error).toContain("Invalid JSON");
+		});
+
+		it("should validate task creation with categoryId", async () => {
+			const request = new Request("http://example.com/api/tasks", {
+				method: "POST",
+				body: JSON.stringify({
+					title: "Test Task",
+					categoryId: 1
+				}),
+				headers: { "Content-Type": "application/json" },
+			});
+			const ctx = createExecutionContext();
+			const response = await worker.fetch(request, env, ctx);
+			await waitOnExecutionContext(ctx);
+
+			// DB error expected in test environment (no tables)
+			// But validation should pass and reach DB operation
+			expect(response.status).toBe(500);
+			expect(response.headers.get("content-type")).toContain("application/json");
 		});
 	});
 
