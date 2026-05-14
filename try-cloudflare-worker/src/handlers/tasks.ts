@@ -1,12 +1,30 @@
 import { eq } from 'drizzle-orm';
 import { getDb } from '../db';
-import { tasks } from '../schema';
+import { tasks, categories } from '../schema';
 import { validateTaskInput, validateId } from '../utils/validation';
 
 export const taskHandler = {
   async list(env: Env) {
     const db = getDb(env);
-    return await db.select().from(tasks);
+    return await db
+      .select({
+        id: tasks.id,
+        title: tasks.title,
+        status: tasks.status,
+        start_at: tasks.start_at,
+        end_at: tasks.end_at,
+        interval: tasks.interval,
+        categoryId: tasks.categoryId,
+        notes: tasks.notes,
+        category: {
+          id: categories.id,
+          slug: categories.slug,
+          name: categories.name,
+          color: categories.color,
+        },
+      })
+      .from(tasks)
+      .leftJoin(categories, eq(tasks.categoryId, categories.id));
   },
 
   async create(env: Env, data: any) {

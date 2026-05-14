@@ -36,6 +36,13 @@
         <option value="monthly">毎月</option>
       </select>
     </div>
+    <div class="form-group">
+      <label for="task-category">カテゴリ</label>
+      <select id="task-category">
+        <option value="">未選択</option>
+        <!-- カテゴリはJavaScriptで動的に追加 -->
+      </select>
+    </div>
     <button type="button" id="add-task-button">追加する</button>
   </section>
 
@@ -45,6 +52,7 @@
         <th>タイトル</th>
         <th>期間</th>
         <th>繰り返し</th>
+        <th>カテゴリ</th>
         <th>状態</th>
         <th>操作</th>
       </tr>
@@ -72,6 +80,7 @@
                 <td><strong>${task.title}</strong></td>
                 <td>${(task.start_at || '-').replace('T', ' ')} <br> ${(task.end_at || '-').replace('T', ' ')}</td>
                 <td>${task.interval}</td>
+                <td>${task.category ? `<span style="color: ${task.category.color}">${task.category.name}</span>` : '-'}</td>
                 <td><span class="status-badge">${task.status}</span></td>
                 <td><button class="delete-btn" onclick="deleteTask(${task.id})">削除</button></td>
               </tr>
@@ -83,6 +92,28 @@
         }
       }
 
+      // カテゴリ一覧の読み込み関数
+      async function loadCategories() {
+        try {
+          const resp = await fetch('/api/categories');
+          if (!resp.ok) throw new Error('カテゴリ一覧の取得に失敗しました');
+          const categories = await resp.json();
+
+          const categorySelect = document.getElementById('task-category');
+          categorySelect.innerHTML = '<option value="">未選択</option>';
+
+          categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category.id;
+            option.textContent = category.name;
+            option.style.color = category.color;
+            categorySelect.appendChild(option);
+          });
+        } catch (err) {
+          console.error('Load Categories Error:', err);
+        }
+      }
+
       // 2. 追加ボタンのイベント
       taskBtn.addEventListener('click', async () => {
         console.log('Button clicked!'); // デバッグ用ログ
@@ -91,7 +122,8 @@
           title: document.getElementById('task-title').value,
           start_at: document.getElementById('task-start').value,
           end_at: document.getElementById('task-end').value,
-          interval: document.getElementById('task-interval').value
+          interval: document.getElementById('task-interval').value,
+          categoryId: document.getElementById('task-category').value || null
         };
 
         if (!payload.title) {
@@ -108,6 +140,10 @@
 
           if (resp.ok) {
             document.getElementById('task-title').value = ''; // 入力欄クリア
+            document.getElementById('task-start').value = '';
+            document.getElementById('task-end').value = '';
+            document.getElementById('task-interval').value = 'none';
+            document.getElementById('task-category').value = '';
             await loadTasks(); // リロードせずに再描画
           } else {
             const errorText = await resp.text();
@@ -121,6 +157,7 @@
 
       // 初回読み込み
       loadTasks();
+      loadCategories();
     });
 
     // 削除用関数（グローバルに配置）
