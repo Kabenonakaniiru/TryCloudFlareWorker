@@ -6,7 +6,7 @@
     "deploy": "wrangler deploy",
     "dev": "wrangler dev",
     "start": "wrangler dev",
-    "test": "vitest",
+    "test": "vitest --run",
     "cf-typegen": "wrangler types",
     "drizzle:migrate": "drizzle-kit migrate --config ./drizzle.config.ts",
     "drizzle:push": "drizzle-kit push --config ./drizzle.config.ts",
