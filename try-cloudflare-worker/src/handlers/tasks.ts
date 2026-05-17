@@ -16,6 +16,7 @@ export const taskHandler = {
         interval: tasks.interval,
         categoryId: tasks.categoryId,
         notes: tasks.notes,
+        schedule_data: tasks.schedule_data,
         category: {
           id: categories.id,
           slug: categories.slug,
@@ -37,7 +38,23 @@ export const taskHandler = {
       interval: validated.interval,
       categoryId: validated.categoryId,
       notes: validated.notes,
+      schedule_data: validated.schedule_data,
     }).returning().get();
+  },
+
+  async update(env: Env, id: number, data: any) {
+    const validatedId = validateId(id);
+    const validated = validateTaskInput(data);
+    const db = getDb(env);
+    await db.update(tasks).set({
+      title: validated.title,
+      start_at: validated.start_at,
+      end_at: validated.end_at,
+      interval: validated.interval,
+      categoryId: validated.categoryId,
+      notes: validated.notes,
+      schedule_data: validated.schedule_data,
+    }).where(eq(tasks.id, validatedId)).run();
   },
 
   async delete(env: Env, id: number) {

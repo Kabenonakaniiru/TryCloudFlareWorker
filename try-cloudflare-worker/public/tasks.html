@@ -20,30 +20,29 @@
       <input type="text" id="task-title" placeholder="例: デイリークエスト">
     </div>
     <div class="form-group">
-      <label for="task-start">開始</label>
-      <input type="datetime-local" id="task-start">
-    </div>
-    <div class="form-group">
-      <label for="task-end">終了</label>
-      <input type="datetime-local" id="task-end">
-    </div>
-    <div class="form-group">
-      <label for="task-interval">繰り返し</label>
-      <select id="task-interval">
-        <option value="none">なし</option>
-        <option value="daily">毎日</option>
-        <option value="weekly">毎週</option>
-        <option value="monthly">毎月</option>
-      </select>
-    </div>
-    <div class="form-group">
       <label for="task-category">カテゴリ</label>
       <select id="task-category">
         <option value="">未選択</option>
         <!-- カテゴリはJavaScriptで動的に追加 -->
       </select>
     </div>
-    <button type="button" id="add-task-button">追加する</button>
+    <div class="form-group">
+      <label for="task-schedule-type">スケジュール種別</label>
+      <select id="task-schedule-type">
+        <option value="none">なし</option>
+        <option value="daily">日次</option>
+        <option value="weekly">週次</option>
+        <option value="monthly">月次</option>
+        <option value="seasonal">季間</option>
+        <option value="yearly">年次</option>
+        <option value="period">期間指定</option>
+      </select>
+    </div>
+    <div id="schedule-details"></div>
+    <div class="form-actions">
+      <button type="button" id="add-task-button">追加する</button>
+      <button type="button" id="cancel-edit-button" style="display:none; margin-left: 10px;">キャンセル</button>
+    </div>
   </section>
 
   <table>
@@ -64,7 +63,39 @@
     // ページ読み込み完了後に実行
     document.addEventListener('DOMContentLoaded', () => {
       const taskBtn = document.getElementById('add-task-button');
+      const cancelEditBtn = document.getElementById('cancel-edit-button');
       const taskList = document.getElementById('task-list');
+      const scheduleTypeSelect = document.getElementById('task-schedule-type');
+      let currentTasks = [];
+      let editTaskId = null;
+
+      function formatSchedule(task) {
+        let scheduleData = {};
+        if (task.schedule_data) {
+          try {
+            scheduleData = JSON.parse(task.schedule_data);
+          } catch {
+            scheduleData = {};
+          }
+        }
+
+        switch (task.interval) {
+          case 'daily':
+            return scheduleData.start_at ? scheduleData.start_at.replace('T', ' ') : '-';
+          case 'weekly':
+            return `${scheduleData.dayOfWeek || '-'} ${scheduleData.time || ''}`;
+          case 'monthly':
+            return `${scheduleData.dayOfMonth || '-'}日 ${scheduleData.time || ''}`;
+          case 'seasonal':
+            return `${scheduleData.range || '-'} ${scheduleData.note || ''}`;
+          case 'yearly':
+            return `${scheduleData.month || '-'}月 ${scheduleData.day || '-'}日`;
+          case 'period':
+            return `${scheduleData.start_at || task.start_at || '-'} ～ ${scheduleData.end_at || task.end_at || '-'}`;
+          default:
+            return `${(task.start_at || '-').replace('T', ' ')} <br> ${(task.end_at || '-').replace('T', ' ')}`;
+        }
+      }
 
       // 1. タスク一覧の読み込み関数
       async function loadTasks() {
@@ -79,10 +110,13 @@
               <tr>
                 <td><strong>${task.title}</strong></td>
                 <td>${task.category ? `<span style="color: ${task.category.color}">${task.category.name}</span>` : '-'}</td>
-                <td>${(task.start_at || '-').replace('T', ' ')} <br> ${(task.end_at || '-').replace('T', ' ')}</td>
-                <td>${task.interval}</td>
+                <td>${formatSchedule(task)}</td>
+                <td>${task.interval || 'なし'}</td>
                 <td><span class="status-badge">${task.status}</span></td>
-                <td><button class="delete-btn" onclick="deleteTask(${task.id})">削除</button></td>
+                <td>
+                  <button class="edit-btn" onclick="editTask(${task.id})">編集</button>
+                  <button class="delete-btn" onclick="deleteTask(${task.id})">削除</button>
+                </td>
               </tr>
             `;
             taskList.insertAdjacentHTML('beforeend', row);
@@ -114,16 +148,249 @@
         }
       }
 
-      // 2. 追加ボタンのイベント
+      // スケジュール入力セクションの生成
+      function renderScheduleDetails() {
+        const container = document.getElementById('schedule-details');
+        const scheduleType = scheduleTypeSelect.value;
+
+        const htmlParts = [];
+
+        if (scheduleType === 'daily') {
+          htmlParts.push(`
+            <div class="form-group">
+              <label for="daily-start">開始日時</label>
+              <input type="datetime-local" id="daily-start">
+            </div>
+          `);
+        } else if (scheduleType === 'weekly') {
+          htmlParts.push(`
+            <div class="form-group">
+              <label for="weekly-day">曜日</label>
+              <select id="weekly-day">
+                <option value="monday">月</option>
+                <option value="tuesday">火</option>
+                <option value="wednesday">水</option>
+                <option value="thursday">木</option>
+                <option value="friday">金</option>
+                <option value="saturday">土</option>
+                <option value="sunday">日</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="weekly-time">時間</label>
+              <input type="time" id="weekly-time">
+            </div>
+          `);
+        } else if (scheduleType === 'monthly') {
+          htmlParts.push(`
+            <div class="form-group">
+              <label for="monthly-day">日</label>
+              <input type="number" id="monthly-day" min="1" max="31" placeholder="日付">
+            </div>
+            <div class="form-group">
+              <label for="monthly-time">時間</label>
+              <input type="time" id="monthly-time">
+            </div>
+          `);
+        } else if (scheduleType === 'seasonal') {
+          htmlParts.push(`
+            <div class="form-group">
+              <label for="seasonal-range">季間</label>
+              <select id="seasonal-range">
+                <option value="3-5">3-5月</option>
+                <option value="6-8">6-8月</option>
+                <option value="9-11">9-11月</option>
+                <option value="12-2">12-2月</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="seasonal-note">メモ</label>
+              <input type="text" id="seasonal-note" placeholder="例: シーズンイベント">
+            </div>
+          `);
+        } else if (scheduleType === 'yearly') {
+          htmlParts.push(`
+            <div class="form-group">
+              <label for="yearly-month">月</label>
+              <select id="yearly-month">
+                <option value="1">1月</option>
+                <option value="2">2月</option>
+                <option value="3">3月</option>
+                <option value="4">4月</option>
+                <option value="5">5月</option>
+                <option value="6">6月</option>
+                <option value="7">7月</option>
+                <option value="8">8月</option>
+                <option value="9">9月</option>
+                <option value="10">10月</option>
+                <option value="11">11月</option>
+                <option value="12">12月</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="yearly-day">日</label>
+              <input type="number" id="yearly-day" min="1" max="31" placeholder="日付">
+            </div>
+          `);
+        } else if (scheduleType === 'period') {
+          htmlParts.push(`
+            <div class="form-group">
+              <label for="period-start">開始</label>
+              <input type="date" id="period-start">
+            </div>
+            <div class="form-group">
+              <label for="period-end">終了</label>
+              <input type="date" id="period-end">
+            </div>
+            <div class="form-group">
+              <label for="period-note">イベント内容</label>
+              <input type="text" id="period-note" placeholder="例: イベント期間">
+            </div>
+          `);
+        } else {
+          htmlParts.push(`
+            <div class="form-group">
+              <label for="task-start">開始</label>
+              <input type="datetime-local" id="task-start">
+            </div>
+            <div class="form-group">
+              <label for="task-end">終了</label>
+              <input type="datetime-local" id="task-end">
+            </div>
+          `);
+        }
+
+        container.innerHTML = htmlParts.join('');
+      }
+
+      function getSchedulePayload(scheduleType) {
+        if (scheduleType === 'daily') {
+          return {
+            interval: 'daily',
+            schedule_data: {
+              start_at: document.getElementById('daily-start').value,
+            },
+          };
+        }
+        if (scheduleType === 'weekly') {
+          return {
+            interval: 'weekly',
+            schedule_data: {
+              dayOfWeek: document.getElementById('weekly-day').value,
+              time: document.getElementById('weekly-time').value,
+            },
+          };
+        }
+        if (scheduleType === 'monthly') {
+          return {
+            interval: 'monthly',
+            schedule_data: {
+              dayOfMonth: Number(document.getElementById('monthly-day').value),
+              time: document.getElementById('monthly-time').value,
+            },
+          };
+        }
+        if (scheduleType === 'seasonal') {
+          return {
+            interval: 'seasonal',
+            schedule_data: {
+              range: document.getElementById('seasonal-range').value,
+              note: document.getElementById('seasonal-note').value,
+            },
+          };
+        }
+        if (scheduleType === 'yearly') {
+          return {
+            interval: 'yearly',
+            schedule_data: {
+              month: Number(document.getElementById('yearly-month').value),
+              day: Number(document.getElementById('yearly-day').value),
+            },
+          };
+        }
+        if (scheduleType === 'period') {
+          return {
+            interval: 'period',
+            schedule_data: {
+              start_at: document.getElementById('period-start').value,
+              end_at: document.getElementById('period-end').value,
+              note: document.getElementById('period-note').value,
+            },
+          };
+        }
+        return {
+          interval: 'none',
+          start_at: document.getElementById('task-start')?.value,
+          end_at: document.getElementById('task-end')?.value,
+        };
+      }
+
+      function resetForm() {
+        editTaskId = null;
+        taskBtn.textContent = '追加する';
+        cancelEditBtn.style.display = 'none';
+        document.getElementById('task-title').value = '';
+        document.getElementById('task-category').value = '';
+        scheduleTypeSelect.value = 'none';
+        renderScheduleDetails();
+      }
+
+      function populateForm(task) {
+        editTaskId = task.id;
+        taskBtn.textContent = '更新する';
+        cancelEditBtn.style.display = 'inline-block';
+        document.getElementById('task-title').value = task.title;
+        document.getElementById('task-category').value = task.categoryId || '';
+        scheduleTypeSelect.value = task.interval || 'none';
+        renderScheduleDetails();
+
+        let scheduleData = {};
+        if (task.schedule_data) {
+          try {
+            scheduleData = JSON.parse(task.schedule_data);
+          } catch {
+            scheduleData = {};
+          }
+        }
+
+        if (task.interval === 'daily') {
+          document.getElementById('daily-start').value = scheduleData.start_at || '';
+        } else if (task.interval === 'weekly') {
+          document.getElementById('weekly-day').value = scheduleData.dayOfWeek || 'monday';
+          document.getElementById('weekly-time').value = scheduleData.time || '';
+        } else if (task.interval === 'monthly') {
+          document.getElementById('monthly-day').value = scheduleData.dayOfMonth || '';
+          document.getElementById('monthly-time').value = scheduleData.time || '';
+        } else if (task.interval === 'seasonal') {
+          document.getElementById('seasonal-range').value = scheduleData.range || '3-5';
+          document.getElementById('seasonal-note').value = scheduleData.note || '';
+        } else if (task.interval === 'yearly') {
+          document.getElementById('yearly-month').value = scheduleData.month || '1';
+          document.getElementById('yearly-day').value = scheduleData.day || '';
+        } else if (task.interval === 'period') {
+          document.getElementById('period-start').value = scheduleData.start_at || '';
+          document.getElementById('period-end').value = scheduleData.end_at || '';
+          document.getElementById('period-note').value = scheduleData.note || '';
+        } else {
+          document.getElementById('task-start').value = task.start_at || '';
+          document.getElementById('task-end').value = task.end_at || '';
+        }
+      }
+
+      // 2. 追加/更新ボタンのイベント
       taskBtn.addEventListener('click', async () => {
         console.log('Button clicked!'); // デバッグ用ログ
 
+        const scheduleType = scheduleTypeSelect.value;
+        const schedulePayload = getSchedulePayload(scheduleType);
+        const method = editTaskId ? 'PUT' : 'POST';
+        const url = editTaskId ? `/api/tasks/${editTaskId}` : '/api/tasks';
+
         const payload = {
           title: document.getElementById('task-title').value,
-          start_at: document.getElementById('task-start').value,
-          end_at: document.getElementById('task-end').value,
-          interval: document.getElementById('task-interval').value,
-          categoryId: document.getElementById('task-category').value || null
+          categoryId: document.getElementById('task-category').value || null,
+          interval: scheduleType,
+          ...schedulePayload,
         };
 
         if (!payload.title) {
@@ -132,19 +399,15 @@
         }
 
         try {
-          const resp = await fetch('/api/tasks', {
-            method: 'POST',
+          const resp = await fetch(url, {
+            method,
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
           });
 
           if (resp.ok) {
-            document.getElementById('task-title').value = ''; // 入力欄クリア
-            document.getElementById('task-start').value = '';
-            document.getElementById('task-end').value = '';
-            document.getElementById('task-interval').value = 'none';
-            document.getElementById('task-category').value = '';
-            await loadTasks(); // リロードせずに再描画
+            resetForm();
+            await loadTasks();
           } else {
             const errorText = await resp.text();
             alert('保存に失敗しました: ' + errorText);
@@ -154,6 +417,15 @@
           alert('通信エラーが発生しました');
         }
       });
+
+      scheduleTypeSelect.addEventListener('change', renderScheduleDetails);
+      cancelEditBtn.addEventListener('click', resetForm);
+
+      window.editTask = function (id) {
+        const task = currentTasks.find((task) => task.id === id);
+        if (!task) return;
+        populateForm(task);
+      };
 
       // 初回読み込み
       loadTasks();

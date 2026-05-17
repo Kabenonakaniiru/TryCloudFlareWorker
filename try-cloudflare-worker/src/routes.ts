@@ -12,7 +12,7 @@ type RouteHandler = (options: RouteParams) => Promise<any>;
 
 interface Route {
   path: string;
-  method: 'GET' | 'POST' | 'DELETE';
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   handler: RouteHandler;
   parseBody?: boolean;
 }
@@ -28,6 +28,12 @@ export const routes: Route[] = [
     path: '/api/tasks',
     method: 'POST',
     handler: ({ env, body }) => taskHandler.create(env, body),
+    parseBody: true,
+  },
+  {
+    path: '/api/tasks/:id',
+    method: 'PUT',
+    handler: ({ env, body, params }) => taskHandler.update(env, Number(params?.id), body),
     parseBody: true,
   },
   {

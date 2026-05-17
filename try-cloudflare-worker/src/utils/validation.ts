@@ -33,9 +33,23 @@ export function validateTaskInput(data: any): {
   interval?: string;
   categoryId?: number;
   notes?: string;
+  schedule_data?: string;
 } {
   if (!data.title || typeof data.title !== 'string' || data.title.trim() === '') {
     throw new Error('title is required and must be a non-empty string');
+  }
+
+  let scheduleData: string | undefined;
+  if (data.schedule_data) {
+    if (typeof data.schedule_data === 'string') {
+      scheduleData = data.schedule_data;
+    } else {
+      try {
+        scheduleData = JSON.stringify(data.schedule_data);
+      } catch {
+        throw new Error('schedule_data must be valid JSON');
+      }
+    }
   }
 
   return {
@@ -45,6 +59,7 @@ export function validateTaskInput(data: any): {
     interval: data.interval ? String(data.interval) : undefined,
     categoryId: data.categoryId ? Number(data.categoryId) : undefined,
     notes: data.notes ? String(data.notes) : undefined,
+    schedule_data: scheduleData,
   };
 }
 

@@ -27,4 +27,5 @@ export const tasks = sqliteTable('tasks', {
   // 追加：カテゴリとの紐付け
   categoryId: integer('category_id').references(() => categories.id),
   notes: text('notes'),
+  schedule_data: text('schedule_data'),
 });
