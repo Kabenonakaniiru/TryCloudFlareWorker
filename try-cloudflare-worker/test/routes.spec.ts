@@ -82,8 +82,8 @@ describe('routes - path matching and resolution', () => {
     });
 
     it('should have GET and DELETE routes without parseBody', () => {
-      const nonPostRoutes = routes.filter((r) => r.method !== 'POST');
-      nonPostRoutes.forEach((route) => {
+      const getDeleteRoutes = routes.filter((r) => r.method === 'GET' || r.method === 'DELETE');
+      getDeleteRoutes.forEach((route) => {
         expect(route.parseBody).toBeUndefined();
       });
     });

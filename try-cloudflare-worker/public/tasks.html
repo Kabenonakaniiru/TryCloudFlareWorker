@@ -104,6 +104,7 @@
           if (!resp.ok) throw new Error('一覧の取得に失敗しました');
           const tasks = await resp.json();
 
+          currentTasks = tasks;
           taskList.innerHTML = '';
           tasks.forEach(task => {
             const row = `
