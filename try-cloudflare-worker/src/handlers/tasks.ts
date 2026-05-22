@@ -33,7 +33,7 @@ export const taskHandler = {
     const validated = validateTaskInput(data);
     const db = getDb(env);
 
-    // 1. D1 にタスクを登録
+    // 1. まずベースとなるタスク情報を D1 に登録
     const newWorkerTask = await db.insert(tasks).values({
       title: validated.title,
       start_at: validated.start_at,
@@ -46,10 +46,6 @@ export const taskHandler = {
 
     // 2. Google カレンダーへの同期処理
     try {
-      let startTime: string | null = null;
-      let endTime: string | null = null;
-
-      // schedule_data が存在する場合はパースを試みる
       let parsedSchedule: any = {};
       if (newWorkerTask.schedule_data) {
         try {
@@ -61,40 +57,45 @@ export const taskHandler = {
         }
       }
 
-      // スケジュール種別ごとに日時の抽出ロジックを切り分け
-      if (newWorkerTask.interval === 'period') {
-        // 期間指定の場合 (YYYY-MM-DD 形式)
-        if (parsedSchedule.start_at && parsedSchedule.end_at) {
-          startTime = new Date(parsedSchedule.start_at).toISOString();
-          // カレンダーの終日・期間終了に合わせるため、日付のパースを設定
-          endTime = new Date(parsedSchedule.end_at).toISOString();
-        }
-      } else if (newWorkerTask.interval === 'daily') {
-        // 日次の開始指定がある場合
-        if (parsedSchedule.start_at) {
-          const start = new Date(parsedSchedule.start_at);
-          startTime = start.toISOString();
-          endTime = new Date(start.getTime() + 60 * 60 * 1000).toISOString(); // デフォルト1時間
-        }
-      } else if (newWorkerTask.interval === 'none' || !newWorkerTask.interval) {
-        // 通常タスク（直下に日時があるパターン）
-        if (newWorkerTask.start_at && newWorkerTask.end_at) {
-          startTime = new Date(newWorkerTask.start_at).toISOString();
-          endTime = new Date(newWorkerTask.end_at).toISOString();
+      // --- [日次タスクの一括・複数日生成ロジック] ---
+      if (newWorkerTask.interval === 'daily' && parsedSchedule.start_at) {
+        const baseDate = new Date(parsedSchedule.start_at);
+        const loops = parsedSchedule.count && parsedSchedule.count > 0 ? parsedSchedule.count : 1;
+
+        for (let i = 0; i < loops; i++) {
+          // ループごとに日付を 1日 ずつずらす
+          const currentStart = new Date(baseDate.getTime());
+          currentStart.setDate(baseDate.getDate() + i);
+
+          const currentEnd = new Date(currentStart.getTime() + 60 * 60 * 1000); // デフォルト1時間
+
+          // 余計な文字は入れず、入力されたタイトルそのままで予定を追加
+          await calendarHandler.createEvent(env, {
+            title: newWorkerTask.title,
+            description: newWorkerTask.notes || '連動デイリータスク',
+            startTime: currentStart.toISOString(),
+            endTime: currentEnd.toISOString(),
+          });
         }
       }
-
-      // 日時が特定できれば Google カレンダーへリクエストを飛ばす
-      if (startTime && endTime) {
+      // --- [その他のスケジュール形式（通常や期間指定）] ---
+      else if (newWorkerTask.interval === 'period' && parsedSchedule.start_at && parsedSchedule.end_at) {
         await calendarHandler.createEvent(env, {
           title: newWorkerTask.title,
-          description: newWorkerTask.notes || `${newWorkerTask.interval || '通常'}タスク`,
-          startTime,
-          endTime,
+          description: newWorkerTask.notes || '期間指定イベント',
+          startTime: new Date(parsedSchedule.start_at).toISOString(),
+          endTime: new Date(parsedSchedule.end_at).toISOString(),
+        });
+      } else if ((newWorkerTask.interval === 'none' || !newWorkerTask.interval) && newWorkerTask.start_at && newWorkerTask.end_at) {
+        await calendarHandler.createEvent(env, {
+          title: newWorkerTask.title,
+          description: newWorkerTask.notes || '通常タスク',
+          startTime: new Date(newWorkerTask.start_at).toISOString(),
+          endTime: new Date(newWorkerTask.end_at).toISOString(),
         });
       }
+
     } catch (calendarError) {
-      // カレンダー側のエラーでタスク登録自体を落とさないよう安全にキャッチ
       console.error("Google Calendar Sync Error (Create):", calendarError);
     }
 

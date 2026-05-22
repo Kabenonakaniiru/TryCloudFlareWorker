@@ -23,7 +23,6 @@
       <label for="task-category">カテゴリ</label>
       <select id="task-category">
         <option value="">未選択</option>
-        <!-- カテゴリはJavaScriptで動的に追加 -->
       </select>
     </div>
     <div class="form-group">
@@ -60,7 +59,6 @@
   </table>
 
   <script>
-    // ページ読み込み完了後に実行
     document.addEventListener('DOMContentLoaded', () => {
       const taskBtn = document.getElementById('add-task-button');
       const cancelEditBtn = document.getElementById('cancel-edit-button');
@@ -81,7 +79,7 @@
 
         switch (task.interval) {
           case 'daily':
-            return scheduleData.start_at ? scheduleData.start_at.replace('T', ' ') : '-';
+            return `${scheduleData.start_at ? scheduleData.start_at.replace('T', ' ') : '-'} (連動: ${scheduleData.count || 1}日間)`;
           case 'weekly':
             return `${scheduleData.dayOfWeek || '-'} ${scheduleData.time || ''}`;
           case 'monthly':
@@ -97,7 +95,6 @@
         }
       }
 
-      // 1. タスク一覧の読み込み関数
       async function loadTasks() {
         try {
           const resp = await fetch('/api/tasks');
@@ -127,7 +124,6 @@
         }
       }
 
-      // カテゴリ一覧の読み込み関数
       async function loadCategories() {
         try {
           const resp = await fetch('/api/categories');
@@ -149,11 +145,9 @@
         }
       }
 
-      // スケジュール入力セクションの生成
       function renderScheduleDetails() {
         const container = document.getElementById('schedule-details');
         const scheduleType = scheduleTypeSelect.value;
-
         const htmlParts = [];
 
         if (scheduleType === 'daily') {
@@ -161,6 +155,10 @@
             <div class="form-group">
               <label for="daily-start">開始日時</label>
               <input type="datetime-local" id="daily-start">
+            </div>
+            <div class="form-group">
+              <label for="daily-count">生成日数</label>
+              <input type="number" id="daily-count" min="1" max="31" value="1" placeholder="何日分一括で追加するか">
             </div>
           `);
         } else if (scheduleType === 'weekly') {
@@ -270,6 +268,7 @@
             interval: 'daily',
             schedule_data: {
               start_at: document.getElementById('daily-start').value,
+              count: Number(document.getElementById('daily-count').value || 1),
             },
           };
         }
@@ -356,6 +355,7 @@
 
         if (task.interval === 'daily') {
           document.getElementById('daily-start').value = scheduleData.start_at || '';
+          document.getElementById('daily-count').value = scheduleData.count || 1;
         } else if (task.interval === 'weekly') {
           document.getElementById('weekly-day').value = scheduleData.dayOfWeek || 'monday';
           document.getElementById('weekly-time').value = scheduleData.time || '';
@@ -378,10 +378,7 @@
         }
       }
 
-      // 2. 追加/更新ボタンのイベント
       taskBtn.addEventListener('click', async () => {
-        console.log('Button clicked!'); // デバッグ用ログ
-
         const scheduleType = scheduleTypeSelect.value;
         const schedulePayload = getSchedulePayload(scheduleType);
         const method = editTaskId ? 'PUT' : 'POST';
@@ -428,12 +425,10 @@
         populateForm(task);
       };
 
-      // 初回読み込み
       loadTasks();
       loadCategories();
     });
 
-    // 削除用関数（グローバルに配置）
     async function deleteTask(id) {
       if (!confirm('このタスクを削除してもよろしいですか？')) return;
 
@@ -443,7 +438,6 @@
         });
 
         if (resp.ok) {
-          // 削除に成功したら一覧を再読み込み
           location.reload();
         } else {
           alert('削除に失敗しました');
