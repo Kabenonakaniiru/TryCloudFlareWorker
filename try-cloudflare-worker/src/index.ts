@@ -26,10 +26,12 @@ export default {
 					}
 				}
 
+				// ★ handlerの引数に urlParams を追加してクエリパラメータを渡せるようにする
 				const result = await matched.route.handler({
 					env,
 					body,
 					params: matched.params,
+					urlParams: url.searchParams,
 				});
 
 				// DELETE は 204 No Content、POST は 201 Created、GET は 200 OK

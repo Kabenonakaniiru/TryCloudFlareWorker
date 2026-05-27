@@ -4,6 +4,45 @@ import { tasks, categories } from '../schema';
 import { validateTaskInput, validateId } from '../utils/validation';
 import { calendarHandler } from './calendar';
 
+// カレンダーへの一括ループ登録を共通関数化
+async function syncToGoogleCalendar(env: Env, workerTask: any) {
+  let parsedSchedule: any = {};
+  if (workerTask.schedule_data) {
+    try {
+      parsedSchedule = typeof workerTask.schedule_data === 'string'
+        ? JSON.parse(workerTask.schedule_data)
+        : workerTask.schedule_data;
+    } catch (_) {
+      parsedSchedule = {};
+    }
+  }
+
+  if (workerTask.interval === 'daily' && parsedSchedule.start_at) {
+    const baseDate = new Date(parsedSchedule.start_at);
+    const loops = parsedSchedule.count && parsedSchedule.count > 0 ? parsedSchedule.count : 1;
+
+    for (let i = 0; i < loops; i++) {
+      const currentStart = new Date(baseDate.getTime());
+      currentStart.setDate(baseDate.getDate() + i);
+      const currentEnd = new Date(currentStart.getTime() + 60 * 60 * 1000); // 1時間
+
+      await calendarHandler.createEvent(env, workerTask.id, {
+        title: workerTask.title,
+        description: workerTask.notes || '連動デイリータスク',
+        startTime: currentStart.toISOString(),
+        endTime: currentEnd.toISOString(),
+      });
+    }
+  } else if ((workerTask.interval === 'none' || !workerTask.interval) && workerTask.start_at && workerTask.end_at) {
+    await calendarHandler.createEvent(env, workerTask.id, {
+      title: workerTask.title,
+      description: workerTask.notes || '通常タスク',
+      startTime: new Date(workerTask.start_at).toISOString(),
+      endTime: new Date(workerTask.end_at).toISOString(),
+    });
+  }
+}
+
 export const taskHandler = {
   async list(env: Env) {
     const db = getDb(env);
@@ -33,7 +72,6 @@ export const taskHandler = {
     const validated = validateTaskInput(data);
     const db = getDb(env);
 
-    // 1. まずベースとなるタスク情報を D1 に登録
     const newWorkerTask = await db.insert(tasks).values({
       title: validated.title,
       start_at: validated.start_at,
@@ -44,70 +82,26 @@ export const taskHandler = {
       schedule_data: validated.schedule_data,
     }).returning().get();
 
-    // 2. Google カレンダーへの同期処理
+    // カレンダーへ同期 (隠し属性 taskId を自動付与)
     try {
-      let parsedSchedule: any = {};
-      if (newWorkerTask.schedule_data) {
-        try {
-          parsedSchedule = typeof newWorkerTask.schedule_data === 'string'
-            ? JSON.parse(newWorkerTask.schedule_data)
-            : newWorkerTask.schedule_data;
-        } catch (_) {
-          parsedSchedule = {};
-        }
-      }
-
-      // --- [日次タスクの一括・複数日生成ロジック] ---
-      if (newWorkerTask.interval === 'daily' && parsedSchedule.start_at) {
-        const baseDate = new Date(parsedSchedule.start_at);
-        const loops = parsedSchedule.count && parsedSchedule.count > 0 ? parsedSchedule.count : 1;
-
-        for (let i = 0; i < loops; i++) {
-          // ループごとに日付を 1日 ずつずらす
-          const currentStart = new Date(baseDate.getTime());
-          currentStart.setDate(baseDate.getDate() + i);
-
-          const currentEnd = new Date(currentStart.getTime() + 60 * 60 * 1000); // デフォルト1時間
-
-          // 余計な文字は入れず、入力されたタイトルそのままで予定を追加
-          await calendarHandler.createEvent(env, {
-            title: newWorkerTask.title,
-            description: newWorkerTask.notes || '連動デイリータスク',
-            startTime: currentStart.toISOString(),
-            endTime: currentEnd.toISOString(),
-          });
-        }
-      }
-      // --- [その他のスケジュール形式（通常や期間指定）] ---
-      else if (newWorkerTask.interval === 'period' && parsedSchedule.start_at && parsedSchedule.end_at) {
-        await calendarHandler.createEvent(env, {
-          title: newWorkerTask.title,
-          description: newWorkerTask.notes || '期間指定イベント',
-          startTime: new Date(parsedSchedule.start_at).toISOString(),
-          endTime: new Date(parsedSchedule.end_at).toISOString(),
-        });
-      } else if ((newWorkerTask.interval === 'none' || !newWorkerTask.interval) && newWorkerTask.start_at && newWorkerTask.end_at) {
-        await calendarHandler.createEvent(env, {
-          title: newWorkerTask.title,
-          description: newWorkerTask.notes || '通常タスク',
-          startTime: new Date(newWorkerTask.start_at).toISOString(),
-          endTime: new Date(newWorkerTask.end_at).toISOString(),
-        });
-      }
-
-    } catch (calendarError) {
-      console.error("Google Calendar Sync Error (Create):", calendarError);
+      await syncToGoogleCalendar(env, newWorkerTask);
+    } catch (err) {
+      console.error("Google Calendar Sync Error (Create):", err);
     }
 
     return newWorkerTask;
   },
 
-  async update(env: Env, id: number, data: any) {
+  async update(env: Env, id: number, data: any, urlParams?: URLSearchParams) {
     const validatedId = validateId(id);
     const validated = validateTaskInput(data);
     const db = getDb(env);
 
-    await db.update(tasks).set({
+    // 画面から渡される target パラメータを取得（デフォルトは 'future'）
+    const scope = (urlParams?.get('target') === 'all') ? 'all' : 'future';
+
+    // 1. D1データベースを更新
+    const updatedWorkerTask = await db.update(tasks).set({
       title: validated.title,
       start_at: validated.start_at,
       end_at: validated.end_at,
@@ -115,12 +109,34 @@ export const taskHandler = {
       categoryId: validated.categoryId,
       notes: validated.notes,
       schedule_data: validated.schedule_data,
-    }).where(eq(tasks.id, validatedId)).run();
+    }).where(eq(tasks.id, validatedId)).returning().get();
+
+    // 2. カレンダー側の指定された範囲の予定を一旦削除して再生成
+    try {
+      await calendarHandler.deleteEventsByTaskId(env, validatedId, scope);
+      await syncToGoogleCalendar(env, updatedWorkerTask);
+    } catch (err) {
+      console.error("Google Calendar Sync Error (Update):", err);
+    }
+
+    return updatedWorkerTask;
   },
 
-  async delete(env: Env, id: number) {
+  async delete(env: Env, id: number, urlParams?: URLSearchParams) {
     const validatedId = validateId(id);
     const db = getDb(env);
+
+    // 画面から渡される target パラメータを取得
+    const scope = (urlParams?.get('target') === 'all') ? 'all' : 'future';
+
+    // 1. カレンダー側の指定範囲のイベントを削除
+    try {
+      await calendarHandler.deleteEventsByTaskId(env, validatedId, scope);
+    } catch (err) {
+      console.error("Google Calendar Sync Error (Delete):", err);
+    }
+
+    // 2. D1からタスクを削除
     await db.delete(tasks).where(eq(tasks.id, validatedId)).run();
   }
 };

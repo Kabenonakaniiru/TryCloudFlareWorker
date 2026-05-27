@@ -6,6 +6,7 @@ export interface RouteParams {
   env: Env;
   body?: any;
   params?: Record<string, string>;
+  urlParams?: URLSearchParams; // ★ index.tsから渡されるクエリパラメータの型を追加
 }
 
 type RouteHandler = (options: RouteParams) => Promise<any>;
@@ -33,13 +34,15 @@ export const routes: Route[] = [
   {
     path: '/api/tasks/:id',
     method: 'PUT',
-    handler: ({ env, body, params }) => taskHandler.update(env, Number(params?.id), body),
+    // ★ urlParams を追加して taskHandler.update へ引き渡す
+    handler: ({ env, body, params, urlParams }) => taskHandler.update(env, Number(params?.id), body, urlParams),
     parseBody: true,
   },
   {
     path: '/api/tasks/:id',
     method: 'DELETE',
-    handler: ({ env, params }) => taskHandler.delete(env, Number(params?.id)),
+    // ★ urlParams を追加して taskHandler.delete へ引き渡す
+    handler: ({ env, params, urlParams }) => taskHandler.delete(env, Number(params?.id), urlParams),
   },
 
   // Category routes
@@ -129,6 +132,7 @@ function matchRoutePath(
 
 /**
  * ページルート（GET のみ）
+ * 拡張子を含まないパスから実際のHTMLファイルへのマッピング
  */
 export const pageRoutes: Record<string, string> = {
   '/categories': '/categories.html',
