@@ -1,46 +1,42 @@
-<!-- public/index.html -->
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 
 <head>
-	<meta charset="UTF-8" />
-	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<title>ソシャゲツール - メイン</title>
+	<meta charset="UTF-8">
+	<title>Daily Routine Manager</title>
 	<link rel="stylesheet" href="/style.css">
 </head>
 
 <body>
-	<h1 id="heading"></h1>
-
-	<nav style="display: flex; gap: 10px; margin-bottom: 20px;">
-		<a href="/tasks" class="btn-link">📅 タスク管理ページへ</a>
-		<a href="/calendar" class="btn-link" style="background-color: #6c757d;">🗓️ カレンダー確認</a>
-		<a href="/categories" class="btn-link" style="background-color: #28a745;">🏷️ カテゴリ管理</a>
-	</nav>
-
-	<p>Cloudflare Workers + D1 で動作中のタスク管理ツールです。</p>
-
-	<!-- 既存のUUID取得やDBテストボタンなど -->
-	<div class="debug-section">
-		<button id="random-button" type="button">Fetch a random UUID</button>
-		<output id="random" for="random-button"></output>
-		<button id="db-button" type="button">Fetch Users from DB</button>
-		<output id="db" for="db-button"></output>
-	</div>
-
-	<hr>
-
-	<!-- 既存のAdd New User セクション -->
-	<h3>Quick Register User</h3>
-	<div class="form-group">
-		<input type="text" id="user-name" placeholder="Enter name">
-		<button id="add-user-button" type="button">Register</button>
-		<p id="register-status"></p>
-	</div>
+	<h1>今日のルーチン</h1>
+	<div id="log-list"></div>
 
 	<script>
-		// 既存の fetch('/message') や各ボタンのイベントリスナー（省略）
-		// ... 
+		async function loadLogs() {
+			const res = await fetch('/api/logs/today');
+			const logs = await res.json();
+
+			const list = document.getElementById('log-list');
+			list.innerHTML = logs.map(item => `
+        <div class="log-item" style="border-left: 5px solid ${item.group?.color || '#ccc'}">
+          <input type="checkbox" ${item.status === 'completed' ? 'checked' : ''} 
+                 onchange="toggleStatus(${item.logId}, this.checked)">
+          <span>${item.group?.name || '未分類'} - ${item.rule.title}</span>
+        </div>
+      `).join('');
+		}
+
+		async function toggleStatus(logId, isChecked) {
+			const status = isChecked ? 'completed' : 'pending';
+			await fetch(`/api/logs/${logId}/status`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ status })
+			});
+			loadLogs(); // 再読み込み
+		}
+
+		loadLogs();
 	</script>
 </body>
 

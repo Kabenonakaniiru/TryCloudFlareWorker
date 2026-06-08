@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>タスク管理 - ソシャゲツール</title>
+  <title>タスクマスタ管理 - ソシャゲツール</title>
   <link rel="stylesheet" href="/style.css">
   <style>
     /* モーダルダイアログのスタイル */
@@ -60,15 +60,16 @@
 </head>
 
 <body>
-  <h1>📋 ソシャゲタスク管理</h1>
+  <h1>📋 ソシャゲタスクルール設定（マスタ管理）</h1>
   <nav>
     <a href="/" class="btn-link">← メインへ戻る</a>
+    <a href="/todo" class="btn-link" style="background-color: #2ecc71; margin-left: 10px;">👉 日々のTODO画面へ</a>
   </nav>
 
   <section class="task-form">
     <div class="form-group">
       <label for="task-title">タスク名</label>
-      <input type="text" id="task-title" placeholder="例: デイリークエスト">
+      <input type="text" id="task-title" placeholder="例: デイリー南西諸島海域クリア">
     </div>
     <div class="form-group">
       <label for="task-category">カテゴリ</label>
@@ -79,19 +80,36 @@
     <div class="form-group">
       <label for="task-schedule-type">スケジュール種別</label>
       <select id="task-schedule-type">
-        <option value="none">なし</option>
-        <option value="daily">日次</option>
-        <option value="weekly">週次</option>
-        <option value="monthly">月次</option>
-        <option value="seasonal">季間</option>
-        <option value="yearly">年次</option>
-        <option value="period">期間指定</option>
+        <option value="none">なし (手動発生)</option>
+        <option value="daily">日次 (毎日発生)</option>
+        <option value="period">期間指定 (イベント・限定任務)</option>
       </select>
     </div>
+
     <div id="schedule-details"></div>
 
+    <div class="form-group">
+      <label for="task-reset-time">リセット時間</label>
+      <input type="time" id="task-reset-time" value="02:00">
+      <small style="color:#666; display:block; margin-top:2px;">※ この時間を過ぎると翌日扱いになります (例: 艦これ等は02:00)</small>
+    </div>
+
+    <div class="form-group">
+      <label for="task-missed-behavior">未完了で翌朝を迎えた時の挙動</label>
+      <select id="task-missed-behavior">
+        <option value="delete">【モードA】強制リセット（前日分はサボり判定にして本日分を新設）</option>
+        <option value="keep">【モードB】累積・繰り越し（完了するまで今日のカレンダーへスライド）</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label for="task-notes">備考・メモ</label>
+      <textarea id="task-notes" placeholder="編成条件やトリガー任務など" rows="2"
+        style="width:100%; padding:8px; border-radius:4px; border:1px solid #ccc; font-family:inherit;"></textarea>
+    </div>
+
     <div class="form-actions">
-      <button type="button" id="add-task-button">追加する</button>
+      <button type="button" id="add-task-button">ルールを追加する</button>
       <button type="button" id="cancel-edit-button" style="display:none; margin-left: 10px;">キャンセル</button>
     </div>
   </section>
@@ -101,9 +119,9 @@
       <tr>
         <th>タイトル</th>
         <th>カテゴリ</th>
-        <th>期間</th>
-        <th>繰り返し</th>
-        <th>状態</th>
+        <th>リセット</th>
+        <th>スケジュール / 期間</th>
+        <th>未完了時</th>
         <th>操作</th>
       </tr>
     </thead>
@@ -146,32 +164,37 @@
       let pendingOperation = null;
 
       function formatSchedule(task) {
-        let scheduleData = {};
-        if (task.schedule_data) {
-          try { scheduleData = JSON.parse(task.schedule_data); } catch { scheduleData = {}; }
+        if (task.interval === 'daily') {
+          return '🔄 毎日自動発生';
+        } else if (task.interval === 'period') {
+          const style = task.periodStyle === 'routine' ? '期間中毎日' : '期間中1回のみ';
+          return `📅 期間指定 (${style})<br><small>${task.startAt || '-'} ～ ${task.endAt || '-'}</small>`;
         }
-        switch (task.interval) {
-          case 'daily':
-            return `${scheduleData.start_at ? scheduleData.start_at.replace('T', ' ') : '-'} (連動: ${scheduleData.count || 1}日間)`;
-          default: return `${(task.start_at || '-').replace('T', ' ')} <br> ${(task.end_at || '-').replace('T', ' ')}`;
-        }
+        return '📑 手動発生のみ';
       }
 
       async function loadTasks() {
         try {
           const resp = await fetch('/api/tasks');
-          if (!resp.ok) throw new Error('一覧の取得に失敗しました');
+          if (!resp.ok) throw new Error('マスタ一覧の取得に失敗しました');
           const tasks = await resp.json();
           currentTasks = tasks;
           taskList.innerHTML = '';
           tasks.forEach(task => {
             const row = `
               <tr>
-                <td><strong>${task.title}</strong></td>
+                <td>
+                  <strong>${task.title}</strong>
+                  ${task.notes ? `<br><small style="color:#777;">📝 ${task.notes}</small>` : ''}
+                </td>
                 <td>${task.category ? `<span style="color: ${task.category.color}">${task.category.name}</span>` : '-'}</td>
+                <td>⏱️ ${task.resetTime}</td>
                 <td>${formatSchedule(task)}</td>
-                <td>${task.interval || 'なし'}</td>
-                <td><span class="status-badge">${task.status}</span></td>
+                <td>
+                  ${task.missedBehavior === 'keep'
+                ? '<span class="status-badge" style="background-color:#f39c12;">↩️ 翌日繰越</span>'
+                : '<span class="status-badge" style="background-color:#95a5a6;">❌ 強制リセット</span>'}
+                </td>
                 <td>
                   <button class="edit-btn" onclick="editTask(${task.id})">編集</button>
                   <button class="delete-btn" onclick="triggerDelete(${task.id})">削除</button>
@@ -204,54 +227,40 @@
         const scheduleType = scheduleTypeSelect.value;
         const htmlParts = [];
 
-        if (scheduleType === 'daily') {
+        if (scheduleType === 'period') {
           htmlParts.push(`
-            <div class="form-group">
-              <label for="daily-start">開始日時</label>
-              <input type="datetime-local" id="daily-start">
-            </div>
-            <div class="form-group">
-              <label for="daily-count">生成日数</label>
-              <input type="number" id="daily-count" min="1" max="31" value="1">
-            </div>
-          `);
-        } else {
-          htmlParts.push(`
-            <div class="form-group">
-              <label for="task-start">開始</label>
-              <input type="datetime-local" id="task-start">
-            </div>
-            <div class="form-group">
-              <label for="task-end">終了</label>
-              <input type="datetime-local" id="task-end">
+            <div class="form-group" style="background: #f9f9f9; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+              <div style="margin-bottom: 10px;">
+                <label for="task-period-style">期間内の消化スタイル</label>
+                <select id="task-period-style">
+                  <option value="routine">期間中、毎日リセットして発生 (限定日課)</option>
+                  <option value="single">期間中に合計1回クリアすればOK (単発任務)</option>
+                </select>
+              </div>
+              <div style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                  <label for="task-start">開始日</label>
+                  <input type="date" id="task-start">
+                </div>
+                <div style="flex: 1;">
+                  <label for="task-end">終了日</label>
+                  <input type="date" id="task-end">
+                </div>
+              </div>
             </div>
           `);
         }
         container.innerHTML = htmlParts.join('');
       }
 
-      function getSchedulePayload(scheduleType) {
-        if (scheduleType === 'daily') {
-          return {
-            interval: 'daily',
-            schedule_data: {
-              start_at: document.getElementById('daily-start').value,
-              count: Number(document.getElementById('daily-count').value || 1),
-            },
-          };
-        }
-        return {
-          interval: 'none',
-          start_at: document.getElementById('task-start')?.value,
-          end_at: document.getElementById('task-end')?.value,
-        };
-      }
-
       function resetForm() {
         editTaskId = null;
-        taskBtn.textContent = '追加する';
+        taskBtn.textContent = 'ルールを追加する';
         cancelEditBtn.style.display = 'none';
         document.getElementById('task-title').value = '';
+        document.getElementById('task-notes').value = '';
+        document.getElementById('task-reset-time').value = '02:00';
+        document.getElementById('task-missed-behavior').value = 'delete';
         categorySelect.value = '';
         scheduleTypeSelect.value = 'none';
         renderScheduleDetails();
@@ -283,17 +292,30 @@
         if (!title) { alert('タスク名を入力してください'); return; }
 
         const scheduleType = scheduleTypeSelect.value;
-        const schedulePayload = getSchedulePayload(scheduleType);
+        let startAt = null;
+        let endAt = null;
+        let periodStyle = null;
+
+        if (scheduleType === 'period') {
+          startAt = document.getElementById('task-start').value || null;
+          endAt = document.getElementById('task-end').value || null;
+          periodStyle = document.getElementById('task-period-style').value;
+        }
 
         const payload = {
           title,
-          categoryId: categorySelect.value || null,
+          categoryId: categorySelect.value ? Number(categorySelect.value) : null,
           interval: scheduleType,
-          ...schedulePayload,
+          periodStyle,
+          startAt,
+          endAt,
+          resetTime: document.getElementById('task-reset-time').value,
+          missedBehavior: document.getElementById('task-missed-behavior').value,
+          notes: document.getElementById('task-notes').value || null,
         };
 
         if (editTaskId) {
-          openScopeModal(title, 'タスク更新の反映範囲', 'このタスクの変更をどの範囲のカレンダー予定に反映しますか？', async (scope) => {
+          openScopeModal(title, 'ルール更新の反映範囲', 'このルールの変更に伴い、連動するGoogleカレンダーの予定をどう処理しますか？', async (scope) => {
             try {
               const resp = await fetch(`/api/tasks/${editTaskId}?target=${scope}`, {
                 method: 'PUT',
@@ -324,23 +346,22 @@
         const task = currentTasks.find((task) => task.id === id);
         if (!task) return;
         editTaskId = task.id;
-        taskBtn.textContent = '更新する';
+        taskBtn.textContent = 'ルールを更新する';
         cancelEditBtn.style.display = 'inline-block';
-        document.getElementById('task-title').value = task.title;
+
+        document.getElementById('task-title').value = task.title || '';
+        document.getElementById('task-notes').value = task.notes || '';
+        document.getElementById('task-reset-time').value = task.resetTime || '02:00';
+        document.getElementById('task-missed-behavior').value = task.missedBehavior || 'delete';
         categorySelect.value = task.categoryId || '';
         scheduleTypeSelect.value = task.interval || 'none';
+
         renderScheduleDetails();
 
-        let scheduleData = {};
-        if (task.schedule_data) {
-          try { scheduleData = JSON.parse(task.schedule_data); } catch { scheduleData = {}; }
-        }
-        if (task.interval === 'daily') {
-          document.getElementById('daily-start').value = scheduleData.start_at || '';
-          document.getElementById('daily-count').value = scheduleData.count || 1;
-        } else {
-          document.getElementById('task-start').value = task.start_at || '';
-          document.getElementById('task-end').value = task.end_at || '';
+        if (task.interval === 'period') {
+          document.getElementById('task-period-style').value = task.periodStyle || 'routine';
+          document.getElementById('task-start').value = task.startAt || '';
+          document.getElementById('task-end').value = task.endAt || '';
         }
       };
 
@@ -348,7 +369,7 @@
         const task = currentTasks.find((task) => task.id === id);
         if (!task) return;
 
-        openScopeModal(task.title, 'タスク削除の確認', 'このタスクと連動しているGoogleカレンダーの削除範囲を選択してください：', async (scope) => {
+        openScopeModal(task.title, 'ルールの削除確認', 'ルールを削除すると、紐づく日々の未完了TODOも削除されます。カレンダー連携の処理範囲を選択してください：', async (scope) => {
           try {
             const resp = await fetch(`/api/tasks/${id}?target=${scope}`, { method: 'DELETE' });
             if (resp.ok) { await loadTasks(); }
@@ -357,7 +378,7 @@
         });
       };
 
-      // 初期化処理
+      // 初期化
       renderScheduleDetails();
       loadTasks();
       loadCategories();
