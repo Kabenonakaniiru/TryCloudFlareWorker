@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<body>
+  <nav><a href="/">← 今日のルーチンに戻る</a></nav>
+  <h1>日課管理</h1>
+
+  <section>
+    <h3>新規ルール追加</h3>
+    <input type="text" id="title" placeholder="日課名">
+    <select id="groupId"></select>
+    <button onclick="addRule()">追加</button>
+  </section>
+
+  <section>
+    <h3>現在のルール</h3>
+    <ul id="rule-list"></ul>
+  </section>
+
+  <script>
+    async function init() {
+      console.log("init started");
+      try {
+        // 1. fetchの結果を await して Response を取得
+        const resRules = await fetch('/api/rules');
+        const resGroups = await fetch('/api/groups');
+
+        // 2. その後、json() を await してデータを抽出
+        const rules = await resRules.json();
+        const groups = await resGroups.json();
+
+        console.log("Fetched rules:", rules);
+        console.log("Fetched groups:", groups);
+
+        // 3. 描画処理（HTML要素のIDが正しいか確認してください）
+        const ruleList = document.getElementById('rule-list');
+        const groupSelect = document.getElementById('groupId');
+
+        if (groupSelect) {
+          groupSelect.innerHTML = groups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+        }
+
+        if (ruleList) {
+          ruleList.innerHTML = rules.map(r => `
+        <li>
+          ${r.title} ${r.group ? `[${r.group.name}]` : '[グループなし]'} 
+          <button onclick="deleteRule(${r.id})">削除</button>
+        </li>
+      `).join('');
+        }
+      } catch (err) {
+        console.error("DEBUG ERROR:", err);
+      }
+    }
+
+    async function addRule() {
+      const title = document.getElementById('title').value;
+      const groupId = parseInt(document.getElementById('groupId').value);
+      if (!title) return;
+      await fetch('/api/rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, groupId })
+      });
+      location.reload();
+    }
+
+    async function deleteRule(id) {
+      if (!confirm('削除しますか？')) return;
+      await fetch('/api/rules/' + id, { method: 'DELETE' });
+      location.reload();
+    }
+    init();
+  </script>
+</body>
+
+</html>

@@ -8,14 +8,14 @@
 </head>
 
 <body>
-	<h1>今日のルーチン</h1>
+	<h1>今日のルーチン <a href="/admin.html" style="font-size: 0.5em; vertical-align: middle;">[管理画面へ]</a></h1>
 	<div id="log-list"></div>
 
 	<script>
+		// ... (以前のスクリプトはそのまま)
 		async function loadLogs() {
 			const res = await fetch('/api/logs/today');
 			const logs = await res.json();
-
 			const list = document.getElementById('log-list');
 			list.innerHTML = logs.map(item => `
         <div class="log-item" style="border-left: 5px solid ${item.group?.color || '#ccc'}">
@@ -27,15 +27,13 @@
 		}
 
 		async function toggleStatus(logId, isChecked) {
-			const status = isChecked ? 'completed' : 'pending';
 			await fetch(`/api/logs/${logId}/status`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ status })
+				body: JSON.stringify({ status: isChecked ? 'completed' : 'pending' })
 			});
-			loadLogs(); // 再読み込み
+			loadLogs();
 		}
-
 		loadLogs();
 	</script>
 </body>

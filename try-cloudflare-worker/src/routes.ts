@@ -44,5 +44,11 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     return Response.json(await ruleHandler.updateLogStatus(env, id, status));
   }
 
+  // --- グループ/ルールの一括取得 (管理画面用) ---
+  if (path === '/api/admin/data' && method === 'GET') {
+    const groups = await groupHandler.list(env);
+    const rules = await ruleHandler.list(env);
+    return Response.json({ groups, rules });
+  }
   return new Response('Not Found', { status: 404 });
 }
