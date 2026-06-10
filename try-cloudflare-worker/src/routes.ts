@@ -50,5 +50,11 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     const rules = await ruleHandler.list(env);
     return Response.json({ groups, rules });
   }
+
+  if (path === '/api/logs/generate' && method === 'POST') {
+    await ruleHandler.runDailyLifecycle(env); // 既存の生成ロジックを再利用
+    return Response.json({ success: true });
+  }
+
   return new Response('Not Found', { status: 404 });
 }

@@ -3,6 +3,7 @@
 
 <body>
   <nav><a href="/">← 今日のルーチンに戻る</a></nav>
+
   <h1>日課管理</h1>
 
   <section>
@@ -11,6 +12,19 @@
     <select id="groupId"></select>
     <button onclick="addRule()">追加</button>
   </section>
+
+  <section>
+    <h3>運用管理</h3>
+    <button onclick="generateTodayLogs()" style="background-color: #e0e0e0; padding: 10px;">今日の日課を生成する</button>
+  </section>
+
+  <script>
+    async function generateTodayLogs() {
+      await fetch('/api/logs/generate', { method: 'POST' });
+      alert('今日のログを生成しました！');
+      location.reload();
+    }
+  </script>
 
   <section>
     <h3>現在のルール</h3>
