@@ -36,3 +36,6 @@ export const logs = sqliteTable('logs', {
   calendarEventId: text('calendar_event_id'), // GoogleカレンダーのイベントID（書き換え用）
   updatedAt: text('updated_at').default(new Date().toISOString()),
 });
+
+export type Group = typeof groups.$inferSelect;
+export type Rule = typeof rules.$inferSelect;

@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "public/dist",
+    "lib": [
+      "es2024",
+      "dom"
+    ]
+  },
+  "include": [
+    "src"
+  ]
+}

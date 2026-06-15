@@ -7,53 +7,41 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
   const method = request.method;
 
   // --- Group API ---
-  if (path === '/api/groups' && method === 'GET') {
-    return Response.json(await groupHandler.list(env));
-  }
-  if (path === '/api/groups' && method === 'POST') {
-    return Response.json(await groupHandler.create(env, await request.json()));
+  if (path === '/api/groups') {
+    if (method === 'GET') return groupHandler.list(env);
+    if (method === 'POST') return groupHandler.create(request, env);
   }
   if (path.startsWith('/api/groups/') && method === 'DELETE') {
     const id = parseInt(path.split('/')[3]);
-    return Response.json(await groupHandler.delete(env, id));
+    return groupHandler.delete(id, env);
   }
 
   // --- Rule API ---
-  if (path === '/api/rules' && method === 'GET') {
-    return Response.json(await ruleHandler.list(env));
+  if (path === '/api/rules') {
+    if (method === 'GET') return ruleHandler.list(env);
+    if (method === 'POST') return ruleHandler.create(request, env);
   }
-  if (path === '/api/rules' && method === 'POST') {
-    return Response.json(await ruleHandler.create(env, await request.json()));
-  }
-  if (path.startsWith('/api/rules/') && method === 'PUT') {
+  if (path.startsWith('/api/rules/')) {
     const id = parseInt(path.split('/')[3]);
-    return Response.json(await ruleHandler.update(env, id, await request.json()));
-  }
-  if (path.startsWith('/api/rules/') && method === 'DELETE') {
-    const id = parseInt(path.split('/')[3]);
-    return Response.json(await ruleHandler.delete(env, id));
+    if (method === 'PUT') return ruleHandler.update(id, request, env);
+    if (method === 'DELETE') return ruleHandler.delete(id, env);
   }
 
   // --- Log API ---
   if (path === '/api/logs/today' && method === 'GET') {
-    return Response.json(await ruleHandler.listTodayLogs(env));
+    return ruleHandler.listTodayLogs(env);
   }
   if (path.match(/\/api\/logs\/\d+\/status/) && method === 'PUT') {
     const id = parseInt(path.split('/')[3]);
-    const { status } = await request.json();
-    return Response.json(await ruleHandler.updateLogStatus(env, id, status));
+    return ruleHandler.updateLogStatus(id, request, env);
   }
 
-  // --- グループ/ルールの一括取得 (管理画面用) ---
+  // --- Admin API ---
   if (path === '/api/admin/data' && method === 'GET') {
-    const groups = await groupHandler.list(env);
-    const rules = await ruleHandler.list(env);
-    return Response.json({ groups, rules });
+    return ruleHandler.getAdminData(env);
   }
-
   if (path === '/api/logs/generate' && method === 'POST') {
-    await ruleHandler.runDailyLifecycle(env); // 既存の生成ロジックを再利用
-    return Response.json({ success: true });
+    return ruleHandler.generateLogs(env);
   }
 
   return new Response('Not Found', { status: 404 });
