@@ -13,12 +13,12 @@
     "drizzle:introspect": "drizzle-kit introspect --config ./drizzle.config.ts"
   },
   "devDependencies": {
-    "@cloudflare/vitest-pool-workers": "^0.12.4",
+    "@cloudflare/vitest-pool-workers": "^0.16.18",
     "@types/node": "^25.5.2",
     "dotenv": "^10.0.0",
     "drizzle-kit": "^0.31.10",
     "typescript": "^5.5.2",
-    "vitest": "~3.2.0",
+    "vitest": "~4.1.9",
     "wrangler": "^4.80.0"
   },
   "dependencies": {
