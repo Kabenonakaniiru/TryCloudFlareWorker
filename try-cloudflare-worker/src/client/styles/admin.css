@@ -1,0 +1,68 @@
+/* admin.css - 管理画面専用スタイル */
+
+h3 {
+  margin-top: 2rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+/* 入力・フォームエリア */
+section {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+input,
+select {
+  padding: 8px;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  cursor: pointer;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background-color: #007bff;
+  color: white;
+  font-weight: bold;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+/* 運用管理ボタンの個別装飾 */
+#generate-btn {
+  background-color: #6c757d;
+}
+
+#generate-btn:hover {
+  background-color: #5a6268;
+}
+
+/* ルールリスト */
+#rule-list {
+  list-style: none;
+  padding: 0;
+}
+
+#rule-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  border-bottom: 1px solid #eee;
+}
+
+.delete-btn {
+  background-color: #dc3545;
+}
+
+.delete-btn:hover {
+  background-color: #a71d2a;
+}
