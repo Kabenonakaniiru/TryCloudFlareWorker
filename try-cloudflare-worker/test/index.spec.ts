@@ -7,9 +7,9 @@ import { describe, it, expect } from "vitest";
 import worker from "../src";
 
 describe("Worker API", () => {
-	describe("GET /api/tasks", () => {
+	describe("GET /api/rules", () => {
 		it("should handle request", async () => {
-			const request = new Request("http://example.com/api/tasks", {
+			const request = new Request("http://example.com/api/rules", {
 				method: "GET",
 			});
 			const ctx = createExecutionContext();
@@ -17,16 +17,15 @@ describe("Worker API", () => {
 			await waitOnExecutionContext(ctx);
 
 			// DB error expected in test environment (no tables)
-			// The API now includes category information via JOIN query
 			// Just verify the route was found and error was handled
 			expect(response.status).toBe(500);
 			expect(response.headers.get("content-type")).toContain("application/json");
 		});
 	});
 
-	describe("GET /api/categories", () => {
+	describe("GET /api/groups", () => {
 		it("should handle request", async () => {
-			const request = new Request("http://example.com/api/categories", {
+			const request = new Request("http://example.com/api/groups", {
 				method: "GET",
 			});
 			const ctx = createExecutionContext();
@@ -42,7 +41,7 @@ describe("Worker API", () => {
 
 	describe("POST requests", () => {
 		it("should return 400 for invalid JSON", async () => {
-			const request = new Request("http://example.com/api/tasks", {
+			const request = new Request("http://example.com/api/rules", {
 				method: "POST",
 				body: "invalid json",
 				headers: { "Content-Type": "application/json" },
@@ -56,12 +55,12 @@ describe("Worker API", () => {
 			expect(body.error).toContain("Invalid JSON");
 		});
 
-		it("should validate task creation with categoryId", async () => {
-			const request = new Request("http://example.com/api/tasks", {
+		it("should validate rule creation with groupId", async () => {
+			const request = new Request("http://example.com/api/rules", {
 				method: "POST",
 				body: JSON.stringify({
-					title: "Test Task",
-					categoryId: 1
+					title: "Test Rule",
+					groupId: 1
 				}),
 				headers: { "Content-Type": "application/json" },
 			});

@@ -40,7 +40,7 @@
 
   <script>
     const loadCategories = async () => {
-      const res = await fetch('/api/categories');
+      const res = await fetch('/api/groups');
       const data = await res.json();
       const body = document.getElementById('cat-list-body');
       body.innerHTML = data.map(c => `
@@ -59,7 +59,7 @@
       const name = document.getElementById('cat-name').value;
       const color = document.getElementById('cat-color').value;
 
-      await fetch('/api/categories', {
+      await fetch('/api/groups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug, name, color })
@@ -69,7 +69,7 @@
 
     window.deleteCategory = async (id) => {
       if (!confirm('削除しますか？')) return;
-      await fetch(`/api/categories/${id}`, {
+      await fetch(`/api/groups/${id}`, {
         method: 'DELETE'
       });
       loadCategories();

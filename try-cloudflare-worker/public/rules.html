@@ -175,7 +175,7 @@
 
       async function loadTasks() {
         try {
-          const resp = await fetch('/api/tasks');
+          const resp = await fetch('/api/rules');
           if (!resp.ok) throw new Error('マスタ一覧の取得に失敗しました');
           const tasks = await resp.json();
           currentTasks = tasks;
@@ -187,7 +187,7 @@
                   <strong>${task.title}</strong>
                   ${task.notes ? `<br><small style="color:#777;">📝 ${task.notes}</small>` : ''}
                 </td>
-                <td>${task.category ? `<span style="color: ${task.category.color}">${task.category.name}</span>` : '-'}</td>
+                <td>${task.group ? `<span style="color: ${task.group.color}">${task.group.name}</span>` : '-'}</td>
                 <td>⏱️ ${task.resetTime}</td>
                 <td>${formatSchedule(task)}</td>
                 <td>
@@ -208,7 +208,7 @@
 
       async function loadCategories() {
         try {
-          const resp = await fetch('/api/categories');
+          const resp = await fetch('/api/groups');
           if (!resp.ok) throw new Error('カテゴリ一覧の取得に失敗しました');
           const categories = await resp.json();
           categorySelect.innerHTML = '<option value="">未選択</option>';
@@ -304,7 +304,7 @@
 
         const payload = {
           title,
-          categoryId: categorySelect.value ? Number(categorySelect.value) : null,
+          groupId: categorySelect.value ? Number(categorySelect.value) : null,
           interval: scheduleType,
           periodStyle,
           startAt,
@@ -317,7 +317,7 @@
         if (editTaskId) {
           openScopeModal(title, 'ルール更新の反映範囲', 'このルールの変更に伴い、連動するGoogleカレンダーの予定をどう処理しますか？', async (scope) => {
             try {
-              const resp = await fetch(`/api/tasks/${editTaskId}?target=${scope}`, {
+              const resp = await fetch(`/api/rules/${editTaskId}?target=${scope}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -328,7 +328,7 @@
           });
         } else {
           try {
-            const resp = await fetch('/api/tasks', {
+            const resp = await fetch('/api/rules', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(payload),
@@ -353,7 +353,7 @@
         document.getElementById('task-notes').value = task.notes || '';
         document.getElementById('task-reset-time').value = task.resetTime || '02:00';
         document.getElementById('task-missed-behavior').value = task.missedBehavior || 'delete';
-        categorySelect.value = task.categoryId || '';
+        categorySelect.value = task.groupId || '';
         scheduleTypeSelect.value = task.interval || 'none';
 
         renderScheduleDetails();
@@ -371,7 +371,7 @@
 
         openScopeModal(task.title, 'ルールの削除確認', 'ルールを削除すると、紐づく日々の未完了TODOも削除されます。カレンダー連携の処理範囲を選択してください：', async (scope) => {
           try {
-            const resp = await fetch(`/api/tasks/${id}?target=${scope}`, { method: 'DELETE' });
+            const resp = await fetch(`/api/rules/${id}?target=${scope}`, { method: 'DELETE' });
             if (resp.ok) { await loadTasks(); }
             else { alert('削除に失敗しました'); }
           } catch (err) { console.error(err); }
