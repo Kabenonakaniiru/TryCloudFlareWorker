@@ -5,7 +5,10 @@ const options = {
   entryPoints: [
     'src/client/admin.ts',
     'src/client/styles/common.css',
-    'src/client/styles/admin.css'
+    'src/client/styles/admin.css',
+    'src/client/styles/index.css',
+    'src/client/styles/groups.css',
+    'src/client/styles/rules.css'
   ],
   bundle: true,
   outdir: 'public/dist/client',
