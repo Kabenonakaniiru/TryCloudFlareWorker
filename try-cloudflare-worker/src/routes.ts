@@ -50,6 +50,9 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
     if (err instanceof SyntaxError) {
       return Response.json({ error: "Invalid JSON: " + err.message }, { status: 400 });
     }
+    if (err.name === 'ValidationError') {
+      return Response.json({ error: err.message }, { status: 400 });
+    }
     return Response.json({ error: err.message || "Internal Server Error" }, { status: 500 });
   }
 }

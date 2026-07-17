@@ -61,14 +61,14 @@ export const calendarHandler = {
   /**
    * 1. 終日予定（All-day event）の作成
    */
-  async createAllDayEvent(env: Env, params: { title: string; description: string; date: string }) {
-    const token = await this.getAccessToken(env);
+  async createAllDayEvent(env: Env, params: { title: string; description: string; date: string }, token?: string) {
+    const accessToken = token || await this.getAccessToken(env);
     const calendarId = env.GOOGLE_CALENDAR_ID || 'primary';
 
     const resp = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -86,14 +86,14 @@ export const calendarHandler = {
   /**
    * 2. 予定のタイトルを書き換え
    */
-  async updateEventTitle(env: Env, eventId: string, newTitle: string) {
-    const token = await this.getAccessToken(env);
+  async updateEventTitle(env: Env, eventId: string, newTitle: string, token?: string) {
+    const accessToken = token || await this.getAccessToken(env);
     const calendarId = env.GOOGLE_CALENDAR_ID || 'primary';
 
     const resp = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${eventId}`, {
       method: 'PATCH',
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -107,14 +107,14 @@ export const calendarHandler = {
   /**
    * 3. 予定の日付を変更
    */
-  async updateEventDate(env: Env, eventId: string, newDate: string) {
-    const token = await this.getAccessToken(env);
+  async updateEventDate(env: Env, eventId: string, newDate: string, token?: string) {
+    const accessToken = token || await this.getAccessToken(env);
     const calendarId = env.GOOGLE_CALENDAR_ID || 'primary';
 
     const resp = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${calendarId}/events/${eventId}`, {
       method: 'PATCH',
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({

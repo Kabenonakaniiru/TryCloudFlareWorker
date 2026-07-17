@@ -1,3 +1,10 @@
+export class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
 /**
  * カテゴリ作成時のバリデーション
  */
@@ -7,13 +14,13 @@ export function validateCategoryInput(data: any): {
   color?: string;
 } {
   if (!data.slug || typeof data.slug !== 'string' || data.slug.trim() === '') {
-    throw new Error('slug is required and must be a non-empty string');
+    throw new ValidationError('Missing required fields: slug is required and must be a non-empty string');
   }
   if (!data.name || typeof data.name !== 'string' || data.name.trim() === '') {
-    throw new Error('name is required and must be a non-empty string');
+    throw new ValidationError('Missing required fields: name is required and must be a non-empty string');
   }
   if (data.color && typeof data.color !== 'string') {
-    throw new Error('color must be a string');
+    throw new ValidationError('color must be a string');
   }
 
   return {
@@ -36,7 +43,7 @@ export function validateTaskInput(data: any): {
   schedule_data?: string;
 } {
   if (!data.title || typeof data.title !== 'string' || data.title.trim() === '') {
-    throw new Error('title is required and must be a non-empty string');
+    throw new ValidationError('title is required and must be a non-empty string');
   }
 
   let scheduleData: string | undefined;
@@ -47,7 +54,7 @@ export function validateTaskInput(data: any): {
       try {
         scheduleData = JSON.stringify(data.schedule_data);
       } catch {
-        throw new Error('schedule_data must be valid JSON');
+        throw new ValidationError('schedule_data must be valid JSON');
       }
     }
   }
@@ -69,7 +76,8 @@ export function validateTaskInput(data: any): {
 export function validateId(id: any): number {
   const parsed = Number(id);
   if (!Number.isInteger(parsed) || parsed <= 0) {
-    throw new Error('id must be a positive integer');
+    throw new ValidationError('id must be a positive integer');
   }
   return parsed;
 }
+

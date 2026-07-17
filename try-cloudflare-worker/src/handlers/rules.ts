@@ -1,7 +1,8 @@
-import { eq, and, lt, inArray, or } from 'drizzle-orm';
+import { eq, and, lt, inArray, or, sql } from 'drizzle-orm';
 import { getDb } from '../db';
 import { rules, logs, groups, type LogStatus } from '../schema';
 import { calendarHandler } from '../services/calendar';
+import { validateTaskInput, validateId } from '../utils/validation';
 
 function getTargetDate(resetTimeStr: string = '04:00'): string {
   const now = new Date();
@@ -43,39 +44,65 @@ export const ruleHandler = {
   },
 
   async create(request: Request, env: Env) {
-    const data = await request.json<any>();
-    const db = getDb(env);
-    const result = await db.insert(rules).values({
-      groupId: data.groupId,
-      title: data.title,
-      interval: data.interval || 'daily',
-      periodStyle: data.periodStyle,
-      startAt: data.startAt,
-      endAt: data.endAt,
-      resetTime: data.resetTime || '04:00',
-      missedBehavior: data.missedBehavior || 'delete',
-      notes: data.notes,
-      scheduleData: data.scheduleData,
-    }).returning().get();
-    return Response.json(result);
+    try {
+      const rawData = await request.json<any>();
+      const data = validateTaskInput(rawData);
+
+      const db = getDb(env);
+
+      // 件数上限チェック
+      const countResult = await db.select({ count: sql`count(*)` }).from(rules).get() as { count: number } | undefined;
+      if (countResult && countResult.count >= 100) {
+        return Response.json({ error: "Rule count limit exceeded (maximum 100)" }, { status: 400 });
+      }
+
+      const result = await db.insert(rules).values({
+        groupId: data.categoryId,
+        title: data.title,
+        interval: data.interval || 'daily',
+        periodStyle: rawData.periodStyle,
+        startAt: data.start_at,
+        endAt: data.end_at,
+        resetTime: rawData.resetTime || '04:00',
+        missedBehavior: rawData.missedBehavior || 'delete',
+        notes: data.notes,
+        scheduleData: data.schedule_data,
+      }).returning().get();
+      return Response.json(result);
+    } catch (err: any) {
+      if (err.name === 'ValidationError') {
+        return Response.json({ error: err.message }, { status: 400 });
+      }
+      throw err;
+    }
   },
 
   async update(id: number, request: Request, env: Env) {
-    const data = await request.json<any>();
-    const db = getDb(env);
-    const result = await db.update(rules).set({
-      groupId: data.groupId,
-      title: data.title,
-      interval: data.interval,
-      periodStyle: data.periodStyle,
-      startAt: data.startAt,
-      endAt: data.endAt,
-      resetTime: data.resetTime,
-      missedBehavior: data.missedBehavior,
-      notes: data.notes,
-      scheduleData: data.scheduleData,
-    }).where(eq(rules.id, id)).returning().get();
-    return Response.json(result);
+    try {
+      const rawData = await request.json<any>();
+      const validatedId = validateId(id);
+      const data = validateTaskInput(rawData);
+
+      const db = getDb(env);
+      const result = await db.update(rules).set({
+        groupId: data.categoryId,
+        title: data.title,
+        interval: data.interval,
+        periodStyle: rawData.periodStyle,
+        startAt: data.start_at,
+        endAt: data.end_at,
+        resetTime: rawData.resetTime,
+        missedBehavior: rawData.missedBehavior,
+        notes: data.notes,
+        scheduleData: data.schedule_data,
+      }).where(eq(rules.id, validatedId)).returning().get();
+      return Response.json(result);
+    } catch (err: any) {
+      if (err.name === 'ValidationError') {
+        return Response.json({ error: err.message }, { status: 400 });
+      }
+      throw err;
+    }
   },
 
   async delete(id: number, env: Env) {
@@ -134,36 +161,64 @@ export const ruleHandler = {
   },
 
   async runDailyLifecycle(env: Env) {
-    // ... 既存の複雑なロジックはそのまま ...
     const db = getDb(env);
     const todayStr = getTargetDate('04:00');
     const yesterdayStr = getOffsetDate(todayStr, -1);
+
+    // Google Calendar API トークンを1回だけ取得して使い回す
+    let token: string | undefined;
+    try {
+      token = await calendarHandler.getAccessToken(env);
+    } catch (e) {
+      console.error("Failed to get Google Calendar access token:", e);
+    }
+
     const yesterdayPendings = await db.select({ log: logs, rule: rules }).from(logs).innerJoin(rules, eq(logs.ruleId, rules.id)).where(and(eq(logs.targetDate, yesterdayStr), eq(logs.status, 'pending'))).all();
     for (const item of yesterdayPendings) {
       if (item.rule.missedBehavior === 'delete') {
         await db.update(logs).set({ status: 'missed', updatedAt: new Date().toISOString() }).where(eq(logs.id, item.log.id)).run();
-        if (item.log.calendarEventId) try { await calendarHandler.updateEventTitle(env, item.log.calendarEventId, `【未完了】${item.rule.title}`); } catch (e) { console.error(e); }
+        if (item.log.calendarEventId && token) {
+          try {
+            await calendarHandler.updateEventTitle(env, item.log.calendarEventId, `【未完了】${item.rule.title}`, token);
+          } catch (e) {
+            console.error(e);
+          }
+        }
       } else {
         await db.update(logs).set({ targetDate: todayStr, updatedAt: new Date().toISOString() }).where(eq(logs.id, item.log.id)).run();
-        if (item.log.calendarEventId) try { await calendarHandler.updateEventDate(env, item.log.calendarEventId, todayStr); } catch (e) { console.error(e); }
+        if (item.log.calendarEventId && token) {
+          try {
+            await calendarHandler.updateEventDate(env, item.log.calendarEventId, todayStr, token);
+          } catch (e) {
+            console.error(e);
+          }
+        }
       }
     }
+
     const allRules = await db.select().from(rules).all();
     for (const rule of allRules) {
       let shouldGenerate = false;
       if (rule.interval === 'daily') shouldGenerate = true;
       else if (rule.interval === 'period' && rule.startAt && rule.endAt && todayStr >= rule.startAt && todayStr <= rule.endAt) {
         if (rule.periodStyle === 'routine') shouldGenerate = true;
-        else if (rule.periodStyle === 'single') { const exists = await db.select().from(logs).where(eq(logs.ruleId, rule.id)).get(); if (!exists) shouldGenerate = true; }
+        else if (rule.periodStyle === 'single') {
+          const exists = await db.select().from(logs).where(eq(logs.ruleId, rule.id)).get();
+          if (!exists) shouldGenerate = true;
+        }
       }
       if (shouldGenerate) {
         const currentExists = await db.select().from(logs).where(and(eq(logs.ruleId, rule.id), eq(logs.targetDate, todayStr))).get();
         if (!currentExists) {
           let calendarEventId: string | null = null;
-          try {
-            const event = await calendarHandler.createAllDayEvent(env, { title: rule.title, description: rule.notes || '定期ルーティン日課', date: todayStr });
-            calendarEventId = event.id;
-          } catch (e) { console.error(e); }
+          if (token) {
+            try {
+              const event = await calendarHandler.createAllDayEvent(env, { title: rule.title, description: rule.notes || '定期ルーティン日課', date: todayStr }, token);
+              calendarEventId = event.id;
+            } catch (e) {
+              console.error(e);
+            }
+          }
           await db.insert(logs).values({ ruleId: rule.id, targetDate: todayStr, status: 'pending', calendarEventId: calendarEventId }).run();
         }
       }
