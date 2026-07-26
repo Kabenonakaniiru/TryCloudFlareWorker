@@ -39,45 +39,7 @@
     </tbody>
   </table>
 
-  <script>
-    const loadCategories = async () => {
-      const res = await fetch('/api/groups');
-      const data = await res.json();
-      const body = document.getElementById('cat-list-body');
-      body.innerHTML = data.map(c => `
-        <tr>
-          <td>${c.id}</td>
-          <td>${c.slug}</td>
-          <td>${c.name}</td>
-          <td><span style="display:inline-block; width:20px; height:20px; background:${c.color}; border:1px solid #000;"></span> ${c.color}</td>
-          <td><button onclick="deleteCategory(${c.id})">削除</button></td>
-        </tr>
-      `).join('');
-    };
-
-    document.getElementById('add-cat-button').onclick = async () => {
-      const slug = document.getElementById('cat-slug').value;
-      const name = document.getElementById('cat-name').value;
-      const color = document.getElementById('cat-color').value;
-
-      await fetch('/api/groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug, name, color })
-      });
-      loadCategories(); // 再読み込み
-    };
-
-    window.deleteCategory = async (id) => {
-      if (!confirm('削除しますか？')) return;
-      await fetch(`/api/groups/${id}`, {
-        method: 'DELETE'
-      });
-      loadCategories();
-    };
-
-    loadCategories();
-  </script>
+  <script src="/dist/client/groups.js"></script>
 </body>
 
 </html>

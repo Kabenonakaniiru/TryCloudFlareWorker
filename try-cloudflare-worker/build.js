@@ -4,6 +4,8 @@ const esbuild = require('esbuild');
 const options = {
   entryPoints: [
     'src/client/admin.ts',
+    'src/client/groups.ts',
+    'src/client/rules.ts',
     'src/client/styles/common.css',
     'src/client/styles/admin.css',
     'src/client/styles/index.css',
