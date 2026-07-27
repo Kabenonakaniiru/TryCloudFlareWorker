@@ -3,6 +3,7 @@ const esbuild = require('esbuild');
 
 const options = {
   entryPoints: [
+    'src/client/index.ts',
     'src/client/admin.ts',
     'src/client/groups.ts',
     'src/client/rules.ts',

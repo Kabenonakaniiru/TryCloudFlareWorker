@@ -13,7 +13,7 @@
   <h1>📋 ソシャゲタスクルール設定（マスタ管理）</h1>
   <nav>
     <a href="/" class="btn-link">← メインへ戻る</a>
-    <a href="/todo" class="btn-link" style="background-color: #2ecc71; margin-left: 10px;">👉 日々のTODO画面へ</a>
+    <a href="/todo" class="btn-link btn-todo">👉 日々のTODO画面へ</a>
   </nav>
 
   <section class="task-form">
@@ -41,7 +41,7 @@
     <div class="form-group">
       <label for="task-reset-time">リセット時間</label>
       <input type="time" id="task-reset-time" value="02:00">
-      <small style="color:#666; display:block; margin-top:2px;">※ この時間を過ぎると翌日扱いになります (例: 艦これ等は02:00)</small>
+      <small class="help-text">※ この時間を過ぎると翌日扱いになります (例: 艦これ等は02:00)</small>
     </div>
 
     <div class="form-group">
@@ -54,13 +54,12 @@
 
     <div class="form-group">
       <label for="task-notes">備考・メモ</label>
-      <textarea id="task-notes" placeholder="編成条件やトリガー任務など" rows="2"
-        style="width:100%; padding:8px; border-radius:4px; border:1px solid #ccc; font-family:inherit;"></textarea>
+      <textarea id="task-notes" placeholder="編成条件やトリガー任務など" rows="2"></textarea>
     </div>
 
     <div class="form-actions">
       <button type="button" id="add-task-button">ルールを追加する</button>
-      <button type="button" id="cancel-edit-button" style="display:none; margin-left: 10px;">キャンセル</button>
+      <button type="button" id="cancel-edit-button" class="hidden">キャンセル</button>
     </div>
   </section>
 
@@ -81,8 +80,8 @@
   <div id="scope-modal" class="modal">
     <div class="modal-content">
       <h3 id="modal-title">カレンダー連動設定</h3>
-      <p style="margin-bottom: 5px;">対象タスク: <span id="modal-task-name" class="target-task-name">-</span></p>
-      <p id="modal-desc" style="font-size: 0.95em; color: #666;">Googleカレンダーの変更・削除範囲を選択してください：</p>
+      <p class="modal-task-target">対象タスク: <span id="modal-task-name" class="target-task-name">-</span></p>
+      <p id="modal-desc" class="modal-desc">Googleカレンダーの変更・削除範囲を選択してください：</p>
       <div class="radio-group">
         <label><input type="radio" name="operation-scope" value="future" checked> 今日以降の予定のみ対象</label>
         <label><input type="radio" name="operation-scope" value="all"> 過去分を含む全期間（一括対象）</label>
@@ -92,6 +91,7 @@
         <button id="modal-cancel-btn" class="delete-btn">キャンセル</button>
       </div>
     </div>
+  </section>
   </div>
 
   <script src="/dist/client/rules.js"></script>

@@ -9,34 +9,10 @@
 </head>
 
 <body>
-	<h1>今日のルーチン <a href="/admin.html" style="font-size: 0.5em; vertical-align: middle;">[管理画面へ]</a></h1>
+	<h1>今日のルーチン <a href="/admin.html" class="admin-link">[管理画面へ]</a></h1>
 	<div id="log-list"></div>
 
-	<script>
-		// ... (以前のスクリプトはそのまま)
-		async function loadLogs() {
-			const res = await fetch('/api/logs/today');
-			const logs = await res.json();
-			const list = document.getElementById('log-list');
-			list.innerHTML = logs.map(item => `
-        <div class="log-item" style="border-left: 5px solid ${item.group?.color || '#ccc'}">
-          <input type="checkbox" ${item.status === 'completed' ? 'checked' : ''} 
-                 onchange="toggleStatus(${item.logId}, this.checked)">
-          <span>${item.group?.name || '未分類'} - ${item.rule.title}</span>
-        </div>
-      `).join('');
-		}
-
-		async function toggleStatus(logId, isChecked) {
-			await fetch(`/api/logs/${logId}/status`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ status: isChecked ? 'completed' : 'pending' })
-			});
-			loadLogs();
-		}
-		loadLogs();
-	</script>
+	<script type="module" src="/dist/client/index.js"></script>
 </body>
 
 </html>
