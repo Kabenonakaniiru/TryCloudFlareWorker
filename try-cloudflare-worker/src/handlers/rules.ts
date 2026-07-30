@@ -121,15 +121,22 @@ export const ruleHandler = {
         targetDate: logs.targetDate,
         status: logs.status,
         calendarEventId: logs.calendarEventId,
-        rule: { id: rules.id, title: rules.title, notes: rules.notes },
-        group: { name: groups.name, color: groups.color }
+        isCarriedOver: logs.isCarriedOver,
+        rule: { id: rules.id, title: rules.title, notes: rules.notes, missedBehavior: rules.missedBehavior },
+        group: { id: groups.id, name: groups.name, color: groups.color }
       })
       .from(logs)
       .innerJoin(rules, eq(logs.ruleId, rules.id))
       .leftJoin(groups, eq(rules.groupId, groups.id))
       .where(or(eq(logs.targetDate, todayStr), eq(logs.status, 'pending')))
       .all();
-    return Response.json(data);
+
+    const formattedData = data.map(item => ({
+      ...item,
+      isCarriedOver: Boolean(item.isCarriedOver || item.targetDate < todayStr)
+    }));
+
+    return Response.json(formattedData);
   },
 
   async updateLogStatus(id: number, request: Request, env: Env) {
@@ -185,7 +192,7 @@ export const ruleHandler = {
           }
         }
       } else {
-        await db.update(logs).set({ targetDate: todayStr, updatedAt: new Date().toISOString() }).where(eq(logs.id, item.log.id)).run();
+        await db.update(logs).set({ targetDate: todayStr, isCarriedOver: 1, updatedAt: new Date().toISOString() }).where(eq(logs.id, item.log.id)).run();
         if (item.log.calendarEventId && token) {
           try {
             await calendarHandler.updateEventDate(env, item.log.calendarEventId, todayStr, token);

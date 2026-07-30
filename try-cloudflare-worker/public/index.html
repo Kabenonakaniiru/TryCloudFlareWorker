@@ -3,14 +3,46 @@
 
 <head>
 	<meta charset="UTF-8">
-	<title>Daily Routine Manager</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Daily Routine Manager - 今日のルーチン</title>
 	<link rel="stylesheet" href="/dist/client/styles/common.css">
 	<link rel="stylesheet" href="/dist/client/styles/index.css">
 </head>
 
 <body>
-	<h1>今日のルーチン <a href="/admin.html" class="admin-link">[管理画面へ]</a></h1>
-	<div id="log-list"></div>
+	<header class="app-header">
+		<div class="header-container">
+			<h1>今日のルーチン</h1>
+			<nav class="nav-links">
+				<a href="/rules.html" class="nav-link">ルール管理</a>
+				<a href="/groups.html" class="nav-link">グループ管理</a>
+				<a href="/admin.html" class="nav-link admin-link">管理者ダッシュボード</a>
+			</nav>
+		</div>
+	</header>
+
+	<main class="main-container">
+		<!-- 進捗インジケーター -->
+		<section class="progress-section">
+			<div class="progress-header">
+				<span class="progress-title">本日の進捗状況</span>
+				<span id="progress-text" class="progress-text">0 / 0 (0%)</span>
+			</div>
+			<div class="progress-bar-container">
+				<div id="progress-bar-fill" class="progress-bar-fill" style="width: 0%;"></div>
+			</div>
+		</section>
+
+		<!-- グループフィルタータブ -->
+		<section class="filter-section">
+			<div id="group-filter-tabs" class="filter-tabs"></div>
+		</section>
+
+		<!-- TODOタスク一覧 -->
+		<section class="task-section">
+			<div id="log-list" class="log-list"></div>
+		</section>
+	</main>
 
 	<script type="module" src="/dist/client/index.js"></script>
 </body>

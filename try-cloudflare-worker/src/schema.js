@@ -28,5 +28,6 @@ export const logs = sqliteTable('logs', {
     targetDate: text('target_date').notNull(), // 対象日 (YYYY-MM-DD)
     status: text('status').$type().notNull().default('pending'), // pending, completed, missed
     calendarEventId: text('calendar_event_id'), // GoogleカレンダーのイベントID（書き換え用）
+    isCarriedOver: integer('is_carried_over').default(0), // 1: 繰越タスク
     updatedAt: text('updated_at').default(new Date().toISOString()),
 });

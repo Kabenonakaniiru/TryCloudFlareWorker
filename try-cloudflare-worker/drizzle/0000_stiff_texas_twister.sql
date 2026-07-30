@@ -13,6 +13,7 @@ CREATE TABLE `logs` (
 	`target_date` text NOT NULL,
 	`status` text DEFAULT 'pending' NOT NULL,
 	`calendar_event_id` text,
+	`is_carried_over` integer DEFAULT 0,
 	`updated_at` text DEFAULT '2026-06-07T09:03:12.424Z',
 	FOREIGN KEY (`rule_id`) REFERENCES `rules`(`id`) ON UPDATE no action ON DELETE cascade
 );

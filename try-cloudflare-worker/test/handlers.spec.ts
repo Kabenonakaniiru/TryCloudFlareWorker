@@ -34,5 +34,8 @@ describe('handlers', () => {
       });
       await expect(ruleHandler.create(mockRequest, {} as Env)).rejects.toThrow();
     });
+    it('should fail with DB error when listing today logs (due to no tables)', async () => {
+      await expect(ruleHandler.listTodayLogs({} as Env)).rejects.toThrow();
+    });
   });
 });
