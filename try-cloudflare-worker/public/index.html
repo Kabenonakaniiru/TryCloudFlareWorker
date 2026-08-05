@@ -33,15 +33,59 @@
 			</div>
 		</section>
 
-		<!-- グループフィルタータブ -->
+		<!-- グループフィルタータブ & クイック追加 -->
 		<section class="filter-section">
-			<div id="group-filter-tabs" class="filter-tabs"></div>
+			<div class="filter-header">
+				<div id="group-filter-tabs" class="filter-tabs"></div>
+				<button id="open-quick-add-btn" class="btn-quick-add" title="新しいルールを迅速に追加">+ ルール追加</button>
+			</div>
 		</section>
 
 		<!-- TODOタスク一覧 -->
 		<section class="task-section">
 			<div id="log-list" class="log-list"></div>
 		</section>
+
+		<!-- クイック追加モーダル -->
+		<div id="quick-add-modal" class="modal-overlay" style="display: none;">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>新規ルーチンルールの追加</h3>
+					<button id="close-quick-add-btn" class="btn-close">&times;</button>
+				</div>
+				<form id="quick-add-form" class="modal-body">
+					<div class="form-group">
+						<label for="quick-title">タスク名 <span class="required">*</span></label>
+						<input type="text" id="quick-title" required placeholder="例: デイリークエスト達成">
+					</div>
+					<div class="form-group">
+						<label for="quick-group">グループ</label>
+						<select id="quick-group"></select>
+					</div>
+					<div class="form-group">
+						<label for="quick-notes">メモ・詳細</label>
+						<input type="text" id="quick-notes" placeholder="例: スタミナ消費も忘れずに">
+					</div>
+					<div class="form-row">
+						<div class="form-group half">
+							<label for="quick-uncompleted-mode">未完了時</label>
+							<select id="quick-uncompleted-mode">
+								<option value="delete">リセット (delete)</option>
+								<option value="slide">繰り越し (slide)</option>
+							</select>
+						</div>
+						<div class="form-group half">
+							<label for="quick-reset-time">リセット時刻</label>
+							<input type="time" id="quick-reset-time" value="04:00">
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" id="cancel-quick-add-btn" class="btn-secondary">キャンセル</button>
+						<button type="submit" class="btn-primary">追加して生成</button>
+					</div>
+				</form>
+			</div>
+		</div>
 	</main>
 
 	<script type="module" src="/dist/client/index.js"></script>
