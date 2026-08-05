@@ -4,17 +4,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>タスクマスタ管理 - ソシャゲツール</title>
+  <title>ルール管理 - Daily Routine Manager</title>
   <link rel="stylesheet" href="/dist/client/styles/common.css">
   <link rel="stylesheet" href="/dist/client/styles/rules.css">
 </head>
 
 <body>
-  <h1>📋 ソシャゲタスクルール設定（マスタ管理）</h1>
-  <nav>
-    <a href="/" class="btn-link">← メインへ戻る</a>
-    <a href="/todo" class="btn-link btn-todo">👉 日々のTODO画面へ</a>
-  </nav>
+  <header class="app-header">
+    <div class="header-container">
+      <h1>📋 ルール管理</h1>
+      <nav class="nav-links">
+        <a href="/" class="nav-link">今日のルーチン</a>
+        <a href="/groups.html" class="nav-link">グループ管理</a>
+        <a href="/admin.html" class="nav-link admin-link">管理者ダッシュボード</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main-container">
 
   <section class="task-form">
     <div class="form-group">
@@ -48,7 +55,7 @@
       <label for="task-missed-behavior">未完了で翌朝を迎えた時の挙動</label>
       <select id="task-missed-behavior">
         <option value="delete">【モードA】強制リセット（前日分はサボり判定にして本日分を新設）</option>
-        <option value="keep">【モードB】累積・繰り越し（完了するまで今日のカレンダーへスライド）</option>
+        <option value="slide">【モードB】累積・繰り越し（完了するまで今日のカレンダーへスライド）</option>
       </select>
     </div>
 
@@ -91,8 +98,10 @@
         <button id="modal-cancel-btn" class="delete-btn">キャンセル</button>
       </div>
     </div>
-  </section>
   </div>
+  </div>
+
+  </main>
 
   <script src="/dist/client/rules.js"></script>
 </body>

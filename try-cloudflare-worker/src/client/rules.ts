@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <td>⏱️ ${escapeHtml(task.resetTime)}</td>
           <td>${formatSchedule(task)}</td>
           <td>
-            ${task.missedBehavior === 'keep'
+            ${task.missedBehavior === 'slide'
             ? '<span class="status-badge" style="background-color:#f39c12;">↩️ 翌日繰越</span>'
             : '<span class="status-badge" style="background-color:#95a5a6;">❌ 強制リセット</span>'}
           </td>

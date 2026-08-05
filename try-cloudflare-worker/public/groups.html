@@ -3,41 +3,52 @@
 
 <head>
   <meta charset="UTF-8" />
-  <title>カテゴリマスタ管理</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>グループ管理 - Daily Routine Manager</title>
   <link rel="stylesheet" href="/dist/client/styles/common.css">
   <link rel="stylesheet" href="/dist/client/styles/groups.css">
 </head>
 
 <body>
-  <h1>🏷️ カテゴリマスタ管理</h1>
-  <nav><a href="/">🏠 メインへ戻る</a></nav>
-
-  <section class="register-section">
-    <h3>新規カテゴリ登録</h3>
-    <div class="form-group">
-      <input type="text" id="cat-slug" placeholder="識別子 (e.g. kancolle)">
-      <input type="text" id="cat-name" placeholder="表示名 (e.g. 艦これ)">
-      <input type="color" id="cat-color" value="#3b82f6">
-      <button id="add-cat-button">追加</button>
+  <header class="app-header">
+    <div class="header-container">
+      <h1>🏷️ グループ管理</h1>
+      <nav class="nav-links">
+        <a href="/" class="nav-link">今日のルーチン</a>
+        <a href="/rules.html" class="nav-link">ルール管理</a>
+        <a href="/admin.html" class="nav-link admin-link">管理者ダッシュボード</a>
+      </nav>
     </div>
-  </section>
+  </header>
 
-  <hr>
+  <main class="main-container">
+    <section class="register-section">
+      <h3>新規グループ登録</h3>
+      <div class="form-group">
+        <input type="text" id="cat-slug" placeholder="識別子 (e.g. kancolle)">
+        <input type="text" id="cat-name" placeholder="表示名 (e.g. 🎮 艦これ)">
+        <input type="color" id="cat-color" value="#3b82f6">
+        <button id="add-cat-button">追加</button>
+      </div>
+    </section>
 
-  <h3>登録済みカテゴリ一覧</h3>
-  <table class="groups-table">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>識別子</th>
-        <th>表示名</th>
-        <th>カラー</th>
-        <th>操作</th>
-      </tr>
-    </thead>
-    <tbody id="cat-list-body">
-    </tbody>
-  </table>
+    <section class="list-section">
+      <h3>登録済みグループ一覧</h3>
+      <table class="groups-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>識別子</th>
+            <th>表示名</th>
+            <th>カラー</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="cat-list-body">
+        </tbody>
+      </table>
+    </section>
+  </main>
 
   <script src="/dist/client/groups.js"></script>
 </body>

@@ -3,30 +3,47 @@
 
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理者ダッシュボード - Daily Routine Manager</title>
   <link rel="stylesheet" href="/dist/client/styles/common.css">
   <link rel="stylesheet" href="/dist/client/styles/admin.css">
 </head>
 
 <body>
-  <nav><a href="/">← 今日のルーチンに戻る</a></nav>
-  <h1>日課管理</h1>
+  <header class="app-header">
+    <div class="header-container">
+      <h1>管理者ダッシュボード</h1>
+      <nav class="nav-links">
+        <a href="/" class="nav-link">今日のルーチン</a>
+        <a href="/rules.html" class="nav-link">ルール管理</a>
+        <a href="/groups.html" class="nav-link">グループ管理</a>
+      </nav>
+    </div>
+  </header>
 
-  <section>
-    <h3>新規ルール追加</h3>
-    <input type="text" id="title" placeholder="日課名">
-    <select id="groupId"></select>
-    <button id="add-btn">追加</button>
-  </section>
+  <main class="main-container">
+    <section class="admin-section">
+      <h3>📝 新規ルール追加（クイック）</h3>
+      <div class="quick-add-form">
+        <input type="text" id="title" placeholder="日課名を入力">
+        <select id="groupId"></select>
+        <button id="add-btn" class="btn-primary">追加</button>
+      </div>
+      <p class="help-text">※ 詳細な設定は<a href="/rules.html">ルール管理画面</a>から行えます。</p>
+    </section>
 
-  <section>
-    <h3>運用管理</h3>
-    <button id="generate-btn">今日の日課を生成する</button>
-  </section>
+    <section class="admin-section">
+      <h3>⚙️ 運用管理</h3>
+      <button id="generate-btn" class="btn-secondary">今日の日課を生成する</button>
+      <p class="help-text">※ 通常はCronトリガーで自動実行されます。手動実行が必要な場合にお使いください。</p>
+    </section>
 
-  <section>
-    <h3>現在のルール</h3>
-    <ul id="rule-list"></ul>
-  </section>
+    <section class="admin-section">
+      <h3>📋 現在のルール一覧</h3>
+      <ul id="rule-list"></ul>
+      <div id="rule-list-empty" class="empty-message hidden">ルールが登録されていません。</div>
+    </section>
+  </main>
 
   <script type="module" src="/dist/client/admin.js"></script>
 </body>

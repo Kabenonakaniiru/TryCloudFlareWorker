@@ -1,71 +1,122 @@
-/* groups.css - カテゴリマスタ管理画面専用スタイル */
-.register-section {
-  margin-top: 20px;
-  border: 1px solid #ccc;
-  padding: 15px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
+/* groups.css - グループ管理画面専用スタイル */
+
+/* 登録セクション */
+.register-section,
+.list-section {
+  background: var(--card-bg);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 20px;
+  border: 1px solid var(--border-color);
 }
 
+.register-section h3,
+.list-section h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* フォーム */
 .form-group {
   display: flex;
   gap: 10px;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .form-group input[type="text"] {
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   flex: 1;
+  min-width: 150px;
+  font-size: 0.9rem;
 }
 
 .form-group input[type="color"] {
-  width: 40px;
+  width: 42px;
   height: 38px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
   padding: 2px;
   cursor: pointer;
 }
 
 .form-group button {
-  padding: 8px 16px;
-  background-color: #3b82f6;
+  padding: 8px 20px;
+  background-color: var(--primary-color);
   color: white;
   border: none;
-  border-radius: 4px;
-  font-weight: bold;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.9rem;
   cursor: pointer;
+  transition: background-color 0.2s;
 }
 
 .form-group button:hover {
-  background-color: #2563eb;
+  background-color: var(--primary-hover);
 }
 
-.color-preview {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 1px solid #000;
-  vertical-align: middle;
-  margin-right: 5px;
-}
-
+/* テーブル */
 .groups-table {
   width: 100%;
   border-collapse: collapse;
-  border: 1px solid #ccc;
-  margin-top: 10px;
+  font-size: 0.9rem;
 }
 
 .groups-table th,
 .groups-table td {
-  border: 1px solid #ddd;
-  padding: 8px 12px;
+  padding: 10px 14px;
   text-align: left;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .groups-table thead tr {
-  background: #f4f4f4;
+  background: #f8fafc;
+}
+
+.groups-table th {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.groups-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* カラープレビュー */
+.color-preview {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+/* 削除ボタン */
+.delete-cat-btn {
+  padding: 6px 12px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.delete-cat-btn:hover {
+  background-color: #dc2626;
 }
