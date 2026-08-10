@@ -400,12 +400,39 @@
 }
 
 .calendar-badge {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 500;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background-color: #eff6ff;
-  color: #3b82f6;
-  border: 1px solid #bfdbfe;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.calendar-badge.synced {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.calendar-badge.unsynced {
+  background-color: #fffbe6;
+  color: #d97706;
+  border: 1px solid #fef3c7;
+}
+
+.calendar-badge.unsynced:hover {
+  background-color: #fef3c7;
+  color: #b45309;
+  box-shadow: 0 2px 4px rgba(217, 119, 6, 0.15);
+  transform: translateY(-1px);
+}
+
+.calendar-badge.syncing {
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+  cursor: wait;
 }

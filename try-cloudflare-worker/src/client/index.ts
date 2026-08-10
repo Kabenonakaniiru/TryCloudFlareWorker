@@ -184,14 +184,45 @@ function renderLogs(): void {
       headerDiv.appendChild(slideBadge);
     }
 
-    // Google Calendar連携バッジ
+    // Google Calendar連携バッジ / 再同期ボタン
+    const calBadge = document.createElement('span');
     if (item.calendarEventId) {
-      const calBadge = document.createElement('span');
-      calBadge.className = 'calendar-badge';
-      calBadge.title = 'Google Calendar 同期済み';
-      calBadge.textContent = '📅 Calendar';
-      headerDiv.appendChild(calBadge);
+      calBadge.className = 'calendar-badge synced';
+      calBadge.title = 'Google Calendar 同期完了';
+      calBadge.innerHTML = '📅 <span class="badge-text">Calendar同期済</span>';
+    } else {
+      calBadge.className = 'calendar-badge unsynced';
+      calBadge.title = 'クリックしてGoogle Calendarへ手動同期';
+      calBadge.innerHTML = '⚠️ <span class="badge-text">カレンダー未同期 (クリックで同期)</span>';
+      calBadge.style.cursor = 'pointer';
+      calBadge.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        calBadge.classList.add('syncing');
+        calBadge.innerHTML = '⏳ <span class="badge-text">同期処理中...</span>';
+        try {
+          const syncRes = await fetch(`/api/logs/${item.logId}/sync-calendar`, { method: 'POST' });
+          if (syncRes.ok) {
+            const result = await syncRes.json();
+            item.calendarEventId = result.calendarEventId;
+            calBadge.className = 'calendar-badge synced';
+            calBadge.style.cursor = 'default';
+            calBadge.title = 'Google Calendar 同期完了';
+            calBadge.innerHTML = '📅 <span class="badge-text">Calendar同期済</span>';
+          } else {
+            const errJson = await syncRes.json().catch(() => ({}));
+            alert(`カレンダー同期に失敗しました: ${errJson.error || '通信エラー'}`);
+            calBadge.className = 'calendar-badge unsynced';
+            calBadge.innerHTML = '⚠️ <span class="badge-text">カレンダー未同期 (クリックで同期)</span>';
+          }
+        } catch (err) {
+          console.error('Calendar sync error:', err);
+          alert('カレンダー同期処理中にエラーが発生しました');
+          calBadge.className = 'calendar-badge unsynced';
+          calBadge.innerHTML = '⚠️ <span class="badge-text">カレンダー未同期 (クリックで同期)</span>';
+        }
+      });
     }
+    headerDiv.appendChild(calBadge);
 
     const titleSpan = document.createElement('span');
     titleSpan.className = 'task-title';

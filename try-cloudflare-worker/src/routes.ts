@@ -36,6 +36,10 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       const id = parseInt(path.split('/')[3]);
       return await ruleHandler.updateLogStatus(id, request, env);
     }
+    if (path.match(/\/api\/logs\/\d+\/sync-calendar/) && method === 'POST') {
+      const id = parseInt(path.split('/')[3]);
+      return await ruleHandler.syncCalendarLog(id, env);
+    }
 
     // --- Admin API ---
     if (path === '/api/admin/data' && method === 'GET') {

@@ -167,6 +167,39 @@ export const ruleHandler = {
     return Response.json({ success: true });
   },
 
+  async syncCalendarLog(id: number, env: Env) {
+    const db = getDb(env);
+    const item = await db.select({ log: logs, rule: rules }).from(logs).innerJoin(rules, eq(logs.ruleId, rules.id)).where(eq(logs.id, id)).get();
+    if (!item) return Response.json({ error: "Log not found" }, { status: 404 });
+
+    try {
+      const token = await calendarHandler.getAccessToken(env);
+      let eventId = item.log.calendarEventId;
+
+      if (!eventId) {
+        // 未作成の場合は新規作成
+        const title = item.log.status === 'completed' ? `【完了】${item.rule.title}` : (item.log.status === 'missed' ? `【未完了】${item.rule.title}` : item.rule.title);
+        const event = await calendarHandler.createAllDayEvent(env, {
+          title,
+          description: item.rule.notes || '定期ルーティン日課',
+          date: item.log.targetDate,
+        }, token);
+        eventId = event.id;
+        await db.update(logs).set({ calendarEventId: eventId, updatedAt: new Date().toISOString() }).where(eq(logs.id, id)).run();
+      } else {
+        // 作成済みの場合は更新同期
+        const title = item.log.status === 'completed' ? `【完了】${item.rule.title}` : (item.log.status === 'missed' ? `【未完了】${item.rule.title}` : item.rule.title);
+        await calendarHandler.updateEventTitle(env, eventId, title, token);
+        await calendarHandler.updateEventDate(env, eventId, item.log.targetDate, token);
+      }
+
+      return Response.json({ success: true, calendarEventId: eventId });
+    } catch (err: any) {
+      console.error("Manual calendar sync failed:", err);
+      return Response.json({ error: err.message || "Failed to sync Google Calendar" }, { status: 500 });
+    }
+  },
+
   async runDailyLifecycle(env: Env) {
     const db = getDb(env);
     const todayStr = getTargetDate('04:00');
