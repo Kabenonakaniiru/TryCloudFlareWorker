@@ -136,6 +136,14 @@ function renderLogs() {
             slideBadge.textContent = '繰越';
             headerDiv.appendChild(slideBadge);
         }
+        // Google Calendar連携バッジ
+        if (item.calendarEventId) {
+            const calBadge = document.createElement('span');
+            calBadge.className = 'calendar-badge';
+            calBadge.title = 'Google Calendar 同期済み';
+            calBadge.textContent = '📅 Calendar';
+            headerDiv.appendChild(calBadge);
+        }
         const titleSpan = document.createElement('span');
         titleSpan.className = 'task-title';
         titleSpan.textContent = item.rule.title;
@@ -180,4 +188,73 @@ async function toggleStatus(logId, isChecked) {
 }
 document.addEventListener('DOMContentLoaded', () => {
     loadLogs();
+    setupQuickAddModal();
 });
+function setupQuickAddModal() {
+    const modal = document.getElementById('quick-add-modal');
+    const openBtn = document.getElementById('open-quick-add-btn');
+    const closeBtn = document.getElementById('close-quick-add-btn');
+    const cancelBtn = document.getElementById('cancel-quick-add-btn');
+    const form = document.getElementById('quick-add-form');
+    const groupSelect = document.getElementById('quick-group');
+    if (!modal || !openBtn || !closeBtn || !cancelBtn || !form || !groupSelect)
+        return;
+    const openModal = async () => {
+        // グループ選択肢の設定
+        groupSelect.innerHTML = '<option value="">なし (グループなし)</option>';
+        const groups = availableGroups.length > 0 ? availableGroups : await fetchGroups();
+        groups.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.id.toString();
+            opt.textContent = g.name;
+            groupSelect.appendChild(opt);
+        });
+        modal.style.display = 'flex';
+    };
+    const closeModal = () => {
+        modal.style.display = 'none';
+        form.reset();
+    };
+    openBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal)
+            closeModal();
+    });
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const titleInput = document.getElementById('quick-title');
+        const notesInput = document.getElementById('quick-notes');
+        const modeSelect = document.getElementById('quick-uncompleted-mode');
+        const resetTimeInput = document.getElementById('quick-reset-time');
+        const payload = {
+            title: titleInput.value.trim(),
+            groupId: groupSelect.value ? parseInt(groupSelect.value) : null,
+            notes: notesInput.value.trim() || undefined,
+            uncompletedMode: modeSelect.value,
+            resetTime: resetTimeInput.value || '04:00',
+            syncGoogleCalendar: true
+        };
+        try {
+            const createRes = await fetch('/api/rules', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!createRes.ok) {
+                const errData = await createRes.json();
+                alert(`エラー: ${errData.error || 'ルールの追加に失敗しました'}`);
+                return;
+            }
+            // ルール作成後、本日のログも即時自動生成を促す
+            await fetch('/api/logs/generate', { method: 'POST' });
+            closeModal();
+            await loadLogs();
+        }
+        catch (err) {
+            console.error('Error creating rule:', err);
+            alert('通信エラーが発生しました');
+        }
+    });
+}
