@@ -1,4 +1,4 @@
-"use strict";
+import { toast } from './toast';
 let allLogs = [];
 let availableGroups = [];
 let selectedGroupId = 'all';
@@ -136,14 +136,49 @@ function renderLogs() {
             slideBadge.textContent = '繰越';
             headerDiv.appendChild(slideBadge);
         }
-        // Google Calendar連携バッジ
+        // Google Calendar連携バッジ / 再同期ボタン
+        const calBadge = document.createElement('span');
         if (item.calendarEventId) {
-            const calBadge = document.createElement('span');
-            calBadge.className = 'calendar-badge';
-            calBadge.title = 'Google Calendar 同期済み';
-            calBadge.textContent = '📅 Calendar';
-            headerDiv.appendChild(calBadge);
+            calBadge.className = 'calendar-badge synced';
+            calBadge.title = 'Google Calendar 同期完了';
+            calBadge.innerHTML = '📅 <span class="badge-text">Calendar同期済</span>';
         }
+        else {
+            calBadge.className = 'calendar-badge unsynced';
+            calBadge.title = 'クリックしてGoogle Calendarへ手動同期';
+            calBadge.innerHTML = '⚠️ <span class="badge-text">カレンダー未同期 (クリックで同期)</span>';
+            calBadge.style.cursor = 'pointer';
+            calBadge.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                calBadge.classList.add('syncing');
+                calBadge.innerHTML = '⏳ <span class="badge-text">同期処理中...</span>';
+                try {
+                    const syncRes = await fetch(`/api/logs/${item.logId}/sync-calendar`, { method: 'POST' });
+                    if (syncRes.ok) {
+                        const result = await syncRes.json();
+                        item.calendarEventId = result.calendarEventId;
+                        calBadge.className = 'calendar-badge synced';
+                        calBadge.style.cursor = 'default';
+                        calBadge.title = 'Google Calendar 同期完了';
+                        calBadge.innerHTML = '📅 <span class="badge-text">Calendar同期済</span>';
+                        toast.success('Google Calendar との同期に成功しました！');
+                    }
+                    else {
+                        const errJson = await syncRes.json().catch(() => ({}));
+                        toast.error(`カレンダー同期に失敗しました: ${errJson.error || '通信エラー'}`);
+                        calBadge.className = 'calendar-badge unsynced';
+                        calBadge.innerHTML = '⚠️ <span class="badge-text">カレンダー未同期 (クリックで同期)</span>';
+                    }
+                }
+                catch (err) {
+                    console.error('Calendar sync error:', err);
+                    toast.error('カレンダー同期処理中にエラーが発生しました');
+                    calBadge.className = 'calendar-badge unsynced';
+                    calBadge.innerHTML = '⚠️ <span class="badge-text">カレンダー未同期 (クリックで同期)</span>';
+                }
+            });
+        }
+        headerDiv.appendChild(calBadge);
         const titleSpan = document.createElement('span');
         titleSpan.className = 'task-title';
         titleSpan.textContent = item.rule.title;
@@ -244,17 +279,18 @@ function setupQuickAddModal() {
             });
             if (!createRes.ok) {
                 const errData = await createRes.json();
-                alert(`エラー: ${errData.error || 'ルールの追加に失敗しました'}`);
+                toast.error(`エラー: ${errData.error || 'ルールの追加に失敗しました'}`);
                 return;
             }
             // ルール作成後、本日のログも即時自動生成を促す
             await fetch('/api/logs/generate', { method: 'POST' });
             closeModal();
+            toast.success('新しいルールを追加し、本日のタスクに反映しました！');
             await loadLogs();
         }
         catch (err) {
             console.error('Error creating rule:', err);
-            alert('通信エラーが発生しました');
+            toast.error('通信エラーが発生しました');
         }
     });
 }
