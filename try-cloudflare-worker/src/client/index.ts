@@ -1,3 +1,5 @@
+import { toast } from './toast';
+
 interface LogItem {
   logId: number;
   status: string;
@@ -208,15 +210,16 @@ function renderLogs(): void {
             calBadge.style.cursor = 'default';
             calBadge.title = 'Google Calendar 同期完了';
             calBadge.innerHTML = '📅 <span class="badge-text">Calendar同期済</span>';
+            toast.success('Google Calendar との同期に成功しました！');
           } else {
             const errJson = await syncRes.json().catch(() => ({}));
-            alert(`カレンダー同期に失敗しました: ${errJson.error || '通信エラー'}`);
+            toast.error(`カレンダー同期に失敗しました: ${errJson.error || '通信エラー'}`);
             calBadge.className = 'calendar-badge unsynced';
             calBadge.innerHTML = '⚠️ <span class="badge-text">カレンダー未同期 (クリックで同期)</span>';
           }
         } catch (err) {
           console.error('Calendar sync error:', err);
-          alert('カレンダー同期処理中にエラーが発生しました');
+          toast.error('カレンダー同期処理中にエラーが発生しました');
           calBadge.className = 'calendar-badge unsynced';
           calBadge.innerHTML = '⚠️ <span class="badge-text">カレンダー未同期 (クリックで同期)</span>';
         }
@@ -339,7 +342,7 @@ function setupQuickAddModal(): void {
 
       if (!createRes.ok) {
         const errData = await createRes.json();
-        alert(`エラー: ${errData.error || 'ルールの追加に失敗しました'}`);
+        toast.error(`エラー: ${errData.error || 'ルールの追加に失敗しました'}`);
         return;
       }
 
@@ -347,10 +350,11 @@ function setupQuickAddModal(): void {
       await fetch('/api/logs/generate', { method: 'POST' });
 
       closeModal();
+      toast.success('新しいルールを追加し、本日のタスクに反映しました！');
       await loadLogs();
     } catch (err) {
       console.error('Error creating rule:', err);
-      alert('通信エラーが発生しました');
+      toast.error('通信エラーが発生しました');
     }
   });
 }
