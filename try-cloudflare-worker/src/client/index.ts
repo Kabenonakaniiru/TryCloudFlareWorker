@@ -270,6 +270,7 @@ async function toggleStatus(logId: number, isChecked: boolean): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: isChecked ? 'completed' : 'pending' })
     });
+    loadStats(currentStatsDays);
   } catch (error) {
     console.error('Error toggling status:', error);
     await loadLogs(); // エラー時は再読込して復元
@@ -278,8 +279,92 @@ async function toggleStatus(logId: number, isChecked: boolean): Promise<void> {
 
 document.addEventListener('DOMContentLoaded', () => {
   loadLogs();
+  loadStats(7);
   setupQuickAddModal();
+  setupStatsPeriodButtons();
 });
+
+let currentStatsDays = 7;
+
+async function loadStats(days: number): Promise<void> {
+  try {
+    const res = await fetch(`/api/stats?days=${days}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    renderStatsChart(data);
+  } catch (err) {
+    console.error('Failed to load stats:', err);
+  }
+}
+
+function renderStatsChart(data: any): void {
+  const badge = document.getElementById('overall-rate-badge');
+  const chart = document.getElementById('stats-chart');
+  if (badge) {
+    badge.textContent = `直近${data.days}日間: ${data.overall.rate}% (${data.overall.completed}/${data.overall.total})`;
+  }
+  if (!chart) return;
+
+  chart.innerHTML = '';
+
+  data.daily.forEach((item: { date: string; rate: number; total: number; completed: number }) => {
+    const group = document.createElement('div');
+    group.className = 'chart-bar-group';
+
+    // 日付表記 (MM/DD)
+    const dateParts = item.date.split('-');
+    const shortDate = `${dateParts[1]}/${dateParts[2]}`;
+
+    // パーセンテージ表示
+    const rateSpan = document.createElement('span');
+    rateSpan.className = 'chart-bar-rate';
+    rateSpan.textContent = item.total > 0 ? `${item.rate}%` : '-';
+
+    // バー本体
+    const wrapper = document.createElement('div');
+    wrapper.className = 'chart-bar-wrapper';
+    wrapper.title = `${item.date}: ${item.completed}/${item.total} 完了 (${item.rate}%)`;
+
+    const fill = document.createElement('div');
+    fill.className = 'chart-bar-fill';
+    fill.style.height = `${item.total > 0 ? item.rate : 0}%`;
+
+    // 達成率に応じたカラーグラデーション調整
+    if (item.rate === 100) {
+      fill.style.background = 'linear-gradient(180deg, #10b981 0%, #059669 100%)';
+    } else if (item.rate >= 50) {
+      fill.style.background = 'linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%)';
+    } else {
+      fill.style.background = 'linear-gradient(180deg, #f59e0b 0%, #d97706 100%)';
+    }
+
+    wrapper.appendChild(fill);
+
+    // ラベル
+    const label = document.createElement('span');
+    label.className = 'chart-bar-label';
+    label.textContent = shortDate;
+
+    group.appendChild(rateSpan);
+    group.appendChild(wrapper);
+    group.appendChild(label);
+
+    chart.appendChild(group);
+  });
+}
+
+function setupStatsPeriodButtons(): void {
+  const btns = document.querySelectorAll('.stats-period-btn');
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const days = parseInt(btn.getAttribute('data-days') || '7');
+      currentStatsDays = days;
+      loadStats(days);
+    });
+  });
+}
 
 function setupQuickAddModal(): void {
   const modal = document.getElementById('quick-add-modal');

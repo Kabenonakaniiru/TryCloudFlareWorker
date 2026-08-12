@@ -33,6 +33,24 @@
 			</div>
 		</section>
 
+		<!-- 達成状況・推移ダッシュボード -->
+		<section class="stats-section">
+			<div class="stats-header">
+				<div class="stats-title-group">
+					<h2>📊 達成率・推移ダッシュボード</h2>
+					<span id="overall-rate-badge" class="stats-badge">直近7日間: 0%</span>
+				</div>
+				<div class="stats-period-selector">
+					<button class="stats-period-btn active" data-days="7">7日間</button>
+					<button class="stats-period-btn" data-days="14">14日間</button>
+					<button class="stats-period-btn" data-days="30">30日間</button>
+				</div>
+			</div>
+			<div class="stats-chart-container">
+				<div id="stats-chart" class="stats-chart"></div>
+			</div>
+		</section>
+
 		<!-- グループフィルタータブ & クイック追加 -->
 		<section class="filter-section">
 			<div class="filter-header">

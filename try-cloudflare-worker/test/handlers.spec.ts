@@ -37,5 +37,9 @@ describe('handlers', () => {
     it('should fail with DB error when listing today logs (due to no tables)', async () => {
       await expect(ruleHandler.listTodayLogs({} as Env)).rejects.toThrow();
     });
+
+    it('should fail with DB error when getting stats (due to no tables in empty env)', async () => {
+      await expect(ruleHandler.getStats({} as Env, 7)).rejects.toThrow();
+    });
   });
 });

@@ -266,5 +266,67 @@ export const ruleHandler = {
     const retentionDays = Number(env.RETENTION_DAYS) || 1095;
     const boundaryDateStr = getOffsetDate(todayStr, -retentionDays);
     await db.delete(logs).where(and(inArray(logs.status, ['completed', 'missed']), lt(logs.targetDate, boundaryDateStr))).run();
+  },
+
+  async getStats(env: Env, days: number = 7) {
+    const db = getDb(env);
+    const todayStr = getTargetDate('04:00');
+    const startDateStr = getOffsetDate(todayStr, -(days - 1));
+
+    // 日別の達成状況（完了数、未完了・失効数、総タスク数）の集計
+    const rawLogs = await db
+      .select({
+        targetDate: logs.targetDate,
+        status: logs.status,
+        groupId: rules.groupId,
+        groupName: groups.name,
+        groupColor: groups.color
+      })
+      .from(logs)
+      .innerJoin(rules, eq(logs.ruleId, rules.id))
+      .leftJoin(groups, eq(rules.groupId, groups.id))
+      .where(and(sql`${logs.targetDate} >= ${startDateStr}`, sql`${logs.targetDate} <= ${todayStr}`))
+      .all();
+
+    // 日別データの集計
+    const dateMap: Record<string, { total: number; completed: number; missed: number; pending: number }> = {};
+    
+    // 直近N日分を初期化
+    for (let i = days - 1; i >= 0; i--) {
+      const d = getOffsetDate(todayStr, -i);
+      dateMap[d] = { total: 0, completed: 0, missed: 0, pending: 0 };
+    }
+
+    rawLogs.forEach(log => {
+      if (dateMap[log.targetDate]) {
+        dateMap[log.targetDate].total++;
+        if (log.status === 'completed') dateMap[log.targetDate].completed++;
+        else if (log.status === 'missed') dateMap[log.targetDate].missed++;
+        else if (log.status === 'pending') dateMap[log.targetDate].pending++;
+      }
+    });
+
+    const dailyStats = Object.entries(dateMap).map(([date, counts]) => ({
+      date,
+      ...counts,
+      rate: counts.total > 0 ? Math.round((counts.completed / counts.total) * 100) : 0
+    }));
+
+    // 通算統計
+    const overallTotal = rawLogs.length;
+    const overallCompleted = rawLogs.filter(l => l.status === 'completed').length;
+    const overallRate = overallTotal > 0 ? Math.round((overallCompleted / overallTotal) * 100) : 0;
+
+    return Response.json({
+      days,
+      startDate: startDateStr,
+      endDate: todayStr,
+      overall: {
+        total: overallTotal,
+        completed: overallCompleted,
+        rate: overallRate
+      },
+      daily: dailyStats
+    });
   }
 };

@@ -41,6 +41,12 @@ export async function handleRequest(request: Request, env: Env): Promise<Respons
       return await ruleHandler.syncCalendarLog(id, env);
     }
 
+    // --- Stats API ---
+    if (path === '/api/stats' && method === 'GET') {
+      const days = parseInt(url.searchParams.get('days') || '7');
+      return await ruleHandler.getStats(env, days);
+    }
+
     // --- Admin API ---
     if (path === '/api/admin/data' && method === 'GET') {
       return await ruleHandler.getAdminData(env);
