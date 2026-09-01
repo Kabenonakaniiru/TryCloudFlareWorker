@@ -1,4 +1,7 @@
 .env
 node_modules/
 src/client/*.js
+src/client/**/*.js
+public/dist/
 dist/
+
