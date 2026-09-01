@@ -75,8 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
             : '<span class="status-badge" style="background-color:#95a5a6;">❌ 強制リセット</span>'}
           </td>
           <td>
-            <button class="edit-btn action-edit" data-id="${task.id}">編集</button>
-            <button class="delete-btn action-delete" data-id="${task.id}">削除</button>
+            <div class="action-buttons">
+              <button class="edit-btn action-edit" data-id="${task.id}">編集</button>
+              <button class="delete-btn action-delete" data-id="${task.id}">削除</button>
+            </div>
           </td>
         `;
         taskList!.appendChild(tr);
@@ -132,20 +134,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (scheduleType === 'period') {
       htmlParts.push(`
-        <div class="form-group" style="background: #f9f9f9; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
-          <div style="margin-bottom: 10px;">
+        <div class="schedule-period-box">
+          <div class="form-group">
             <label for="task-period-style">期間内の消化スタイル</label>
             <select id="task-period-style">
               <option value="routine">期間中、毎日リセットして発生 (限定日課)</option>
               <option value="single">期間中に合計1回クリアすればOK (単発任務)</option>
             </select>
           </div>
-          <div style="display: flex; gap: 10px;">
-            <div style="flex: 1;">
+          <div class="schedule-dates-row">
+            <div>
               <label for="task-start">開始日</label>
               <input type="date" id="task-start">
             </div>
-            <div style="flex: 1;">
+            <div>
               <label for="task-end">終了日</label>
               <input type="date" id="task-end">
             </div>

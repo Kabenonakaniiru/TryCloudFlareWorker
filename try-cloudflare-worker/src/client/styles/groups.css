@@ -1,13 +1,12 @@
 /* groups.css - グループ管理画面専用スタイル */
 
-/* 登録セクション */
 .register-section,
 .list-section {
   background: var(--card-bg);
   border-radius: var(--radius-md);
   padding: 20px;
   box-shadow: var(--shadow-sm);
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   border: 1px solid var(--border-color);
 }
 
@@ -22,33 +21,62 @@
 }
 
 /* フォーム */
-.form-group {
+.group-form {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
   flex-wrap: wrap;
 }
 
-.form-group input[type="text"] {
+.group-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.group-form-field.flex-1 {
+  flex: 1;
+  min-width: 160px;
+}
+
+.group-form-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.group-form input[type="text"] {
   padding: 8px 12px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
-  flex: 1;
-  min-width: 150px;
   font-size: 0.9rem;
+  width: 100%;
 }
 
-.form-group input[type="color"] {
+.group-form input[type="text"]:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.color-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.group-form input[type="color"] {
   width: 42px;
   height: 38px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-sm);
   padding: 2px;
   cursor: pointer;
+  background: transparent;
 }
 
-.form-group button {
-  padding: 8px 20px;
+.group-form button {
+  padding: 10px 24px;
   background-color: var(--primary-color);
   color: white;
   border: none;
@@ -57,13 +85,19 @@
   font-size: 0.9rem;
   cursor: pointer;
   transition: background-color 0.2s;
+  align-self: flex-end;
+  height: 38px;
 }
 
-.form-group button:hover {
+.group-form button:hover {
   background-color: var(--primary-hover);
 }
 
-/* テーブル */
+/* レスポンシブテーブルラッパー */
+.table-container {
+  overflow-x: auto;
+}
+
 .groups-table {
   width: 100%;
   border-collapse: collapse;
@@ -72,7 +106,7 @@
 
 .groups-table th,
 .groups-table td {
-  padding: 10px 14px;
+  padding: 12px 14px;
   text-align: left;
   border-bottom: 1px solid var(--border-color);
 }
@@ -94,14 +128,21 @@
 }
 
 /* カラープレビュー */
+.color-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+
 .color-preview {
   display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 1px solid var(--border-color);
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
   border-radius: 4px;
   vertical-align: middle;
-  margin-right: 6px;
 }
 
 /* 削除ボタン */
@@ -120,3 +161,21 @@
 .delete-cat-btn:hover {
   background-color: #dc2626;
 }
+
+/* レスポンシブ対応 (モバイル用) */
+@media (max-width: 640px) {
+  .group-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .group-form-field.flex-1 {
+    width: 100%;
+  }
+
+  .group-form button {
+    width: 100%;
+    margin-top: 8px;
+  }
+}
+

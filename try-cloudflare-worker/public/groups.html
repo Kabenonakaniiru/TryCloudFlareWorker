@@ -24,29 +24,42 @@
   <main class="main-container">
     <section class="register-section">
       <h3>新規グループ登録</h3>
-      <div class="form-group">
-        <input type="text" id="cat-slug" placeholder="識別子 (e.g. kancolle)">
-        <input type="text" id="cat-name" placeholder="表示名 (e.g. 🎮 艦これ)">
-        <input type="color" id="cat-color" value="#3b82f6">
-        <button id="add-cat-button">追加</button>
+      <div class="group-form">
+        <div class="group-form-field flex-1">
+          <label for="cat-slug">識別子 (スラッグ)</label>
+          <input type="text" id="cat-slug" placeholder="e.g. kancolle">
+        </div>
+        <div class="group-form-field flex-1">
+          <label for="cat-name">表示名</label>
+          <input type="text" id="cat-name" placeholder="e.g. 🎮 艦これ">
+        </div>
+        <div class="group-form-field">
+          <label for="cat-color">カラー</label>
+          <div class="color-input-wrapper">
+            <input type="color" id="cat-color" value="#3b82f6">
+          </div>
+        </div>
+        <button id="add-cat-button">グループ追加</button>
       </div>
     </section>
 
     <section class="list-section">
       <h3>登録済みグループ一覧</h3>
-      <table class="groups-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>識別子</th>
-            <th>表示名</th>
-            <th>カラー</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="cat-list-body">
-        </tbody>
-      </table>
+      <div class="table-container">
+        <table class="groups-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>識別子</th>
+              <th>表示名</th>
+              <th>カラー</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="cat-list-body">
+          </tbody>
+        </table>
+      </div>
     </section>
   </main>
 

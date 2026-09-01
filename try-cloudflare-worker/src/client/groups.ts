@@ -29,7 +29,7 @@ const loadCategories = async () => {
         <td>${c.id}</td>
         <td><code>${escapeHtml(c.slug)}</code></td>
         <td><strong>${escapeHtml(c.name)}</strong></td>
-        <td><span style="display:inline-block; width:18px; height:18px; background:${escapeHtml(c.color)}; border:1px solid #ccc; vertical-align:middle; border-radius:3px; margin-right:4px;"></span> ${escapeHtml(c.color)}</td>
+        <td><span class="color-badge"><span class="color-preview" style="background:${escapeHtml(c.color)};"></span> ${escapeHtml(c.color)}</span></td>
         <td><button class="delete-cat-btn" data-id="${c.id}">削除</button></td>
       </tr>
     `).join('');
